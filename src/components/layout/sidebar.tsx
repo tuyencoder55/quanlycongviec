@@ -74,8 +74,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4 text-indigo-400" />
-            <span className="flex-1">Bảng việc (Kanban)</span>
+            <CheckCircle2 className="w-4 h-4 text-indigo-400" />
+            <span className="flex-1">Danh sách việc</span>
           </button>
 
           <button

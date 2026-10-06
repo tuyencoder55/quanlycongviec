@@ -123,95 +123,46 @@ export const CompletedTasksScreen: React.FC<CompletedTasksScreenProps> = ({
   const poCount = archivedTasks.filter((t) => t.ref_value).length;
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* Banner tiêu đề module */}
-      <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-950/30 via-card to-card p-5 shadow-sm backdrop-blur-sm shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="emerald" className="gap-1 font-mono text-xs">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                Kho Task Hoàn Thành
-              </Badge>
-              <Badge variant="outline" className="text-xs font-mono">
-                {totalTasks} công việc đã lưu
-              </Badge>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Kho Lưu Trữ Công Việc Hoàn Thành
-            </h2>
-            <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-              Toàn bộ các thẻ việc sau khi hoàn tất sẽ được tập trung tại đây để bảng Kanban luôn gọn gàng.
-              Khi anh bấm <strong>Xóa khỏi Database</strong>, dữ liệu sẽ được xóa thẳng ở Supabase để giải phóng bộ nhớ.
-            </p>
+    <div className="flex flex-col h-full space-y-3">
+      {/* Thanh thống kê & Điều hướng nhanh kiểu Linear */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 py-1 px-0.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card/60 border border-border/50 text-xs">
+            <Archive className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-muted-foreground">Đã lưu trữ:</span>
+            <span className="font-mono font-bold text-foreground">{totalTasks} việc</span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {onNavigateToKanban && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onNavigateToKanban}
-                className="text-xs gap-1.5"
-              >
-                <span>← Quay lại Bảng việc</span>
-              </Button>
-            )}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs">
+            <Layers className="w-3 h-3" />
+            <span>Mã bảng:</span>
+            <span className="font-mono font-bold">{boardCount}</span>
           </div>
+
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
+            <Hash className="w-3 h-3" />
+            <span>Có PO:</span>
+            <span className="font-mono font-bold">{poCount}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 ml-auto">
+          {onNavigateToKanban && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onNavigateToKanban}
+              className="h-8 text-xs gap-1.5 border-border/60 rounded-lg bg-card/40 text-muted-foreground hover:text-foreground"
+            >
+              <span>← Quay lại Bảng việc</span>
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* 3 Thẻ thống kê nhanh */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Tổng thẻ hoàn thành
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Archive className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{totalTasks}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Lưu trữ an toàn</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Mã bảng khác nhau
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Layers className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{boardCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Bảng đã xử lý xong</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Đơn hàng có số PO
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Hash className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{poCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Khớp lệnh thành công</p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Thanh công cụ tìm kiếm & Thao tác xóa hàng loạt */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/40 p-3 rounded-2xl border border-border/60 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-3 flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-card/40 p-2 rounded-xl border border-border/50 shrink-0">
+        <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative w-full">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -286,10 +237,10 @@ export const CompletedTasksScreen: React.FC<CompletedTasksScreenProps> = ({
                   setSelectedTask(task);
                   setIsDetailOpen(true);
                 }}
-                className={`group p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer shadow-sm ${
+                className={`group p-3 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer ${
                   isSelected
-                    ? 'border-primary/60 bg-primary/5 ring-1 ring-primary/30'
-                    : 'border-border/60 bg-card/60 hover:bg-card hover:border-primary/40'
+                    ? 'border-primary/60 bg-primary/5 ring-1 ring-primary/20'
+                    : 'border-border/50 bg-card/60 hover:bg-card hover:border-border/80'
                 }`}
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">

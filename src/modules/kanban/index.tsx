@@ -17,13 +17,15 @@ import { TaskDialog } from './components/task-dialog';
 import { ArchiveDialog } from './components/archive-dialog';
 import type { KanbanTask, TaskFormData } from './types';
 import { useAuth } from '../../hooks/use-auth';
-import { Plus, Search, RefreshCw, LayoutDashboard, Archive } from 'lucide-react';
+import { Plus, RefreshCw, Archive, Sparkles, Filter, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 
 interface KanbanBoardProps {
   externalSearch?: string;
 }
+
+type FilterMode = 'all' | 'urgent' | 'with_po' | 'due';
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' }) => {
   const {
@@ -40,7 +42,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
   } = useKanban();
   const { isAdmin } = useAuth();
 
-  const [localSearch, setLocalSearch] = useState('');
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -109,10 +111,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
     }
   };
 
-  const handleOpenAdd = (columnId?: string) => {
+  const handleOpenAdd = (colId?: string) => {
     if (!isAdmin) return;
     setSelectedTask(null);
-    setDefaultColumnId(columnId || columns[0]?.id || '');
+    setDefaultColumnId(colId || columns[0]?.id || '');
     setIsDialogOpen(true);
   };
 
@@ -133,102 +135,138 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
     await deleteTask(taskId);
   };
 
-  // Lọc thẻ theo từ khóa tìm kiếm
-  const queryTerm = (externalSearch || localSearch).trim().toLowerCase();
+  // Lọc thẻ theo từ khóa tìm kiếm và segmented control tab
+  const queryTerm = externalSearch.trim().toLowerCase();
   const filteredColumns = columns.map((col) => ({
     ...col,
     tasks: col.tasks.filter((t) => {
-      if (!queryTerm) return true;
-      return (
-        t.title.toLowerCase().includes(queryTerm) ||
-        (t.board_code && t.board_code.toLowerCase().includes(queryTerm)) ||
-        (t.mold_code && t.mold_code.toLowerCase().includes(queryTerm)) ||
-        (t.ref_value && t.ref_value.toLowerCase().includes(queryTerm))
-      );
+      // 1. Tìm kiếm theo từ khóa
+      if (queryTerm) {
+        const matchTitle = t.title.toLowerCase().includes(queryTerm);
+        const matchBoard = t.board_code && t.board_code.toLowerCase().includes(queryTerm);
+        const matchMold = t.mold_code && t.mold_code.toLowerCase().includes(queryTerm);
+        const matchRef = t.ref_value && t.ref_value.toLowerCase().includes(queryTerm);
+        if (!matchTitle && !matchBoard && !matchMold && !matchRef) return false;
+      }
+
+      // 2. Lọc theo chế độ Segmented filter
+      if (filterMode === 'urgent') {
+        return t.priority === 'urgent' || t.priority === 'high';
+      }
+      if (filterMode === 'with_po') {
+        return Boolean(t.ref_value);
+      }
+      if (filterMode === 'due') {
+        return Boolean(t.due_date);
+      }
+      return true;
     }),
   }));
 
   const totalActiveTasks = columns.reduce((acc, c) => acc + c.tasks.length, 0);
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* Thanh công cụ phụ của Bảng Kanban */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/40 p-3 rounded-2xl border border-border/60 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
-            <LayoutDashboard className="w-4 h-4 text-primary" />
-            <span>Tiến độ sản xuất</span>
-            <Badge variant="indigo" className="font-mono text-xs">
-              {totalActiveTasks} thẻ việc
-            </Badge>
-          </div>
-
-          {/* Ô lọc nhanh nội bộ */}
-          <div className="relative hidden md:block w-64">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Lọc mã bảng, khuôn..."
-              className="w-full h-8 bg-background/60 border border-input rounded-lg pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
+    <div className="flex flex-col h-full space-y-3">
+      {/* Thanh công cụ phụ phong cách Linear: Tối giản, tập trung vào thao tác cá nhân */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 py-1 px-0.5">
+        {/* Bộ lọc phân đoạn nhanh (Segmented Control) */}
+        <div className="flex items-center gap-1 bg-card/60 p-1 rounded-lg border border-border/60 text-xs">
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              filterMode === 'all'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            }`}
+          >
+            Tất cả ({totalActiveTasks})
+          </button>
+          <button
+            onClick={() => setFilterMode('urgent')}
+            className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              filterMode === 'urgent'
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            }`}
+          >
+            Gấp / Ưu tiên
+          </button>
+          <button
+            onClick={() => setFilterMode('with_po')}
+            className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              filterMode === 'with_po'
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            }`}
+          >
+            Đơn có PO
+          </button>
+          <button
+            onClick={() => setFilterMode('due')}
+            className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              filterMode === 'due'
+                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            }`}
+          >
+            Có hạn chót
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        {/* Cụm công cụ bên phải */}
+        <div className="flex items-center gap-1.5 ml-auto">
           {/* Nút mở nhanh Kho lưu trữ */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsArchiveOpen(true)}
-            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground border-border/80"
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground border-border/60 rounded-lg bg-card/40"
             title="Xem kho lưu trữ các việc đã hoàn thành"
           >
             <Archive className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Kho lưu trữ</span>
+            <span>Lưu trữ</span>
             {archivedTasks.length > 0 && (
-              <span className="font-mono text-[10px] bg-secondary px-1.5 py-0.2 rounded-full border border-border">
+              <span className="font-mono text-[10px] bg-secondary px-1.5 py-0.2 rounded-full border border-border/50 text-foreground">
                 {archivedTasks.length}
               </span>
             )}
           </Button>
 
+          {/* Nút Làm mới */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => refetch()}
             disabled={isLoading}
-            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            title="Tải lại dữ liệu"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            title="Tải lại bảng"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Làm mới</span>
           </Button>
 
+          {/* Nút Thêm việc */}
           {isAdmin && (
             <Button
-              variant="gradient"
               size="sm"
               onClick={() => handleOpenAdd()}
-              className="h-8 gap-1.5 text-xs font-medium shadow-sm"
+              className="h-8 gap-1.5 text-xs font-medium rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Thêm việc mới</span>
+              <span>Thêm thẻ</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* Khu vực các cột kéo thả Kanban */}
-      <div className="flex-1 min-h-0 overflow-x-auto pb-4">
+      {/* Khu vực các cột kéo thả Kanban - Chiếm trọn không gian */}
+      <div className="flex-1 min-h-0 overflow-x-auto pb-2">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 h-full items-start">
+          <div className="flex gap-3.5 h-full items-start">
             {filteredColumns.map((column) => (
               <KanbanColumn
                 key={column.id}
@@ -250,7 +288,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
         </DndContext>
       </div>
 
-      {/* Dialog thêm / sửa thẻ */}
+      {/* Hộp thoại tạo / sửa thẻ chi tiết */}
       <TaskDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
@@ -262,13 +300,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
         isAdmin={isAdmin}
       />
 
-      {/* Dialog Kho lưu trữ các việc đã hoàn thành */}
+      {/* Hộp thoại Quản lý kho việc đã lưu trữ */}
       <ArchiveDialog
         isOpen={isArchiveOpen}
         onOpenChange={setIsArchiveOpen}
         archivedTasks={archivedTasks}
         onRestore={restoreTask}
-        onDelete={handleDeleteTask}
         onSelectTask={handleCardClick}
         isAdmin={isAdmin}
       />

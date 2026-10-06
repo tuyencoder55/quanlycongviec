@@ -1,9 +1,8 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, Tag, Layers, Box, Hash, GripVertical } from 'lucide-react';
+import { Calendar, Layers, Box, Hash, GripVertical, Clock } from 'lucide-react';
 import type { KanbanTask } from '../types';
-import { Badge } from '../../../components/ui/badge';
 import { formatDate } from '../../../lib/utils';
 
 interface KanbanCardProps {
@@ -32,7 +31,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.35 : 1,
+    opacity: isDragging ? 0.3 : 1,
   };
 
   const isOverdue =
@@ -40,58 +39,75 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
     !task.done &&
     new Date(task.due_date).getTime() < new Date().setHours(0, 0, 0, 0);
 
-  // Nhãn mức độ ưu tiên
+  // Cấu hình nhãn mức độ ưu tiên tối giản, không bị loè loẹt
   const priorityConfig = {
-    urgent: { text: 'Khẩn cấp', class: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
-    high: { text: 'Cao', class: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-    medium: { text: 'Vừa', class: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' },
-    low: { text: 'Thấp', class: 'bg-slate-500/15 text-slate-400 border-slate-500/30' },
-  }[task.priority] || { text: 'Vừa', class: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' };
+    urgent: { text: 'Khẩn cấp', dot: 'bg-rose-400', badge: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+    high: { text: 'Cao', dot: 'bg-amber-400', badge: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+    medium: { text: 'Vừa', dot: 'bg-indigo-400', badge: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+    low: { text: 'Thấp', dot: 'bg-slate-400', badge: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
+  }[task.priority] || { text: 'Vừa', dot: 'bg-indigo-400', badge: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative rounded-xl border bg-card/80 backdrop-blur-sm p-3.5 shadow-sm transition-all duration-200 select-none ${
+      className={`group relative rounded-lg border bg-card/70 hover:bg-card p-3 shadow-2xs transition-all duration-150 select-none ${
         isOverlay
-          ? 'shadow-2xl border-primary/60 scale-105 rotate-1 cursor-grabbing bg-card ring-2 ring-primary/40'
-          : 'hover:border-primary/40 hover:shadow-md cursor-pointer'
-      } ${task.done ? 'opacity-70 bg-card/40' : ''}`}
+          ? 'shadow-xl border-primary/70 scale-102 rotate-1 cursor-grabbing bg-card ring-1 ring-primary/40'
+          : 'border-border/50 hover:border-border/90 hover:shadow-xs cursor-pointer'
+      } ${task.done ? 'opacity-65 bg-card/30' : ''}`}
       onClick={onClick}
     >
-      {/* Nút kéo thả handle */}
+      {/* Nút handle kéo thả tinh tế (chỉ hiện khi rê chuột) */}
       <div
         {...attributes}
         {...listeners}
         onClick={(e) => e.stopPropagation()}
-        className="absolute top-3 right-2 p-1 text-muted-foreground/40 hover:text-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2.5 right-2 p-1 text-muted-foreground/30 hover:text-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity rounded"
         title="Kéo thả thẻ"
       >
         <GripVertical className="w-3.5 h-3.5" />
       </div>
 
-      {/* Header thẻ: Mức độ ưu tiên & Trạng thái */}
-      <div className="flex items-center gap-1.5 mb-2 pr-6">
-        <span
-          className={`text-[10px] font-medium px-2 py-0.5 rounded-md border font-mono ${priorityConfig.class}`}
-        >
-          {priorityConfig.text}
-        </span>
+      {/* Header thẻ: Mức độ ưu tiên & Nhãn & Hạn chót */}
+      <div className="flex items-center justify-between gap-1.5 mb-1.5 pr-5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`text-[10px] font-medium px-1.5 py-0.2 rounded border font-mono inline-flex items-center gap-1 ${priorityConfig.badge}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${priorityConfig.dot}`} />
+            {priorityConfig.text}
+          </span>
 
-        {task.labels &&
-          task.labels.map((label, idx) => (
-            <span
-              key={idx}
-              className="text-[10px] px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground border border-border/60"
-            >
-              {label}
-            </span>
-          ))}
+          {task.labels &&
+            task.labels.map((label, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] px-1.5 py-0.2 rounded bg-secondary/80 text-secondary-foreground border border-border/40 font-mono"
+              >
+                {label}
+              </span>
+            ))}
+        </div>
+
+        {/* Hạn chót ở header nếu có */}
+        {task.due_date && (
+          <div
+            className={`text-[10px] font-mono flex items-center gap-1 ${
+              isOverdue
+                ? 'text-rose-400 font-semibold'
+                : 'text-muted-foreground/80'
+            }`}
+          >
+            <Clock className="w-2.5 h-2.5" />
+            <span>{formatDate(task.due_date)}</span>
+          </div>
+        )}
       </div>
 
-      {/* Tiêu đề thẻ (Tên file) */}
+      {/* Tiêu đề thẻ (Tên file sản xuất) */}
       <h4
-        className={`text-xs font-semibold text-foreground tracking-tight leading-relaxed font-mono ${
+        className={`text-xs font-medium text-foreground tracking-tight leading-snug font-mono break-all ${
           task.done ? 'line-through text-muted-foreground' : ''
         }`}
       >
@@ -100,48 +116,32 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 
       {/* Mô tả ngắn nếu có */}
       {task.description && (
-        <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">
+        <p className="text-[11px] text-muted-foreground/80 line-clamp-2 mt-1 leading-normal">
           {task.description}
         </p>
       )}
 
-      {/* Thông tin mã tự động bóc tách (Bảng, Khuôn, PO) */}
+      {/* Các chip mã bóc tách: Bảng, Khuôn, PO */}
       {(task.board_code || task.mold_code || task.ref_value) && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 mt-2 border-t border-border/50 text-[10px] font-mono">
+        <div className="flex flex-wrap items-center gap-1 pt-2 mt-2 border-t border-border/40 text-[10px] font-mono">
           {task.board_code && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-              <Layers className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <Layers className="w-2.5 h-2.5" />
               <span>{task.board_code}</span>
             </span>
           )}
           {task.mold_code && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Box className="w-3 h-3" />
+              <Box className="w-2.5 h-2.5" />
               <span>{task.mold_code}</span>
             </span>
           )}
           {task.ref_value && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Hash className="w-3 h-3" />
+              <Hash className="w-2.5 h-2.5" />
               <span>PO: {task.ref_value}</span>
             </span>
           )}
-        </div>
-      )}
-
-      {/* Footer thẻ: Hạn chót & Thời gian tạo */}
-      {task.due_date && (
-        <div className="flex items-center justify-between pt-2 mt-1 text-[10px]">
-          <div
-            className={`flex items-center gap-1 font-mono ${
-              isOverdue ? 'text-rose-400 font-semibold animate-pulse' : 'text-muted-foreground'
-            }`}
-          >
-            <Calendar className="w-3 h-3" />
-            <span>
-              {formatDate(task.due_date)} {isOverdue && '(Quá hạn)'}
-            </span>
-          </div>
         </div>
       )}
     </div>

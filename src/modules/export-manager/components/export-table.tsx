@@ -95,10 +95,10 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="p-12 text-center rounded-2xl border border-dashed border-border/80 bg-card/30">
-        <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-        <h4 className="text-sm font-semibold text-foreground">Không có dữ liệu xuất nào</h4>
-        <p className="text-xs text-muted-foreground mt-1">
+      <div className="p-12 text-center rounded-xl border border-dashed border-border/50 bg-card/20">
+        <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+        <h4 className="text-xs font-semibold text-foreground">Không có dữ liệu xuất nào</h4>
+        <p className="text-[11px] text-muted-foreground mt-1">
           Không tìm thấy dòng xuất xưởng nào phù hợp với bộ lọc tìm kiếm hiện tại.
         </p>
       </div>
@@ -106,7 +106,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-border/70 bg-card/60 backdrop-blur-md shadow-sm">
+    <div className="w-full overflow-hidden rounded-xl border border-border/50 bg-card/40">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           {/* Header Bảng tính Google Sheets */}

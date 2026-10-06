@@ -27,25 +27,25 @@
   }
 
   .dark {
-    /* Obsidian Nexus Dark Theme Palette */
-    --background: 223 38% 6%;         /* #090d16 */
-    --foreground: 220 25% 90%;        /* #dfe2eb */
-    --card: 216 21% 11%;              /* #161b22 */
-    --card-foreground: 220 25% 90%;
-    --popover: 216 21% 11%;
-    --popover-foreground: 220 25% 90%;
-    --primary: 239 84% 67%;           /* #6366f1 Indigo */
+    /* Minimalist Linear Palette - Trung tính, sắc nét, chống mỏi mắt cho cá nhân */
+    --background: 240 10% 4%;          /* #090a0f */
+    --foreground: 220 14% 93%;         /* #edeff4 */
+    --card: 240 6% 7.8%;               /* #121318 */
+    --card-foreground: 220 14% 93%;
+    --popover: 240 6% 8.5%;            /* #15161c */
+    --popover-foreground: 220 14% 93%;
+    --primary: 239 84% 67%;            /* #6366f1 Indigo */
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 19% 15%;         /* #1c2026 */
-    --secondary-foreground: 220 25% 90%;
-    --muted: 215 19% 15%;
-    --muted-foreground: 215 14% 60%;  /* #8b949e */
-    --accent: 215 19% 18%;            /* #21262d */
-    --accent-foreground: 220 25% 90%;
-    --destructive: 348 83% 60%;       /* #f43f5e Rose */
+    --secondary: 240 5% 12.5%;         /* #1d1e24 */
+    --secondary-foreground: 220 14% 90%;
+    --muted: 240 5% 12.5%;
+    --muted-foreground: 240 5% 58%;    /* #8f919a */
+    --accent: 240 5% 15%;              /* #23242c */
+    --accent-foreground: 220 14% 96%;
+    --destructive: 348 83% 60%;        /* #f43f5e Rose */
     --destructive-foreground: 0 0% 100%;
-    --border: 215 14% 18%;            /* rgba(255, 255, 255, 0.08) */
-    --input: 215 14% 18%;
+    --border: 240 5% 14.5%;            /* #22232a - hairline mỏng tinh tế */
+    --input: 240 5% 15%;
     --ring: 239 84% 67%;
     --radius: 0.75rem;
   }

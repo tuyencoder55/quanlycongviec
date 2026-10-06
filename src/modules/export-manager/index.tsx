@@ -5,18 +5,15 @@ import { ExportTable } from './components/export-table';
 import { ExportDialog } from './components/export-dialog';
 import type { ExportItem, ExportFormData, ExportTypeFilter, ExportDateFilter } from './types';
 import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import {
   Search,
   Plus,
   RefreshCw,
-  FileSpreadsheet,
+  Download,
   Layers,
   Box,
   Hash,
-  Download,
-  CheckCircle2,
+  Database,
 } from 'lucide-react';
 
 interface ExportManagerProps {
@@ -133,136 +130,90 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* Banner tiêu đề module */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-indigo-950/40 via-card to-card p-5 shadow-sm backdrop-blur-sm shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="indigo" className="gap-1 font-mono text-xs">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
-                Google Sheets Database
-              </Badge>
-              <Badge variant="outline" className="text-xs font-mono">
-                {stats.total} dòng ghi nhận
-              </Badge>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Tra Cứu Xuất Xưởng (Bảng / Khuôn / PO)
-            </h2>
-            <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-              Bảng tra cứu nguồn sự thật duy nhất của hệ thống. Nhấp vào bất kỳ ô mã nào để copy nhanh.
-              Mỗi bảng và khuôn chỉ xuất một lần; PO mới được xuất bổ sung theo đợt.
-            </p>
+    <div className="flex flex-col h-full space-y-3">
+      {/* Thanh số liệu thống kê nhanh gọn kiểu Linear pills */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 py-1 px-0.5">
+        {/* Nhóm chip thống kê mini */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card/60 border border-border/50 text-xs">
+            <Database className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">Tổng xuất:</span>
+            <span className="font-mono font-bold text-foreground">{stats.total}</span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs">
+            <Layers className="w-3 h-3" />
+            <span>Bảng:</span>
+            <span className="font-mono font-bold">{stats.boardCount}</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+            <Box className="w-3 h-3" />
+            <span>Khuôn:</span>
+            <span className="font-mono font-bold">{stats.moldCount}</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
+            <Hash className="w-3 h-3" />
+            <span>PO:</span>
+            <span className="font-mono font-bold">{stats.poCount}</span>
+          </div>
+        </div>
+
+        {/* Nút hành động bên phải */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="h-8 text-xs gap-1.5 border-border/60 rounded-lg bg-card/40 text-muted-foreground hover:text-foreground"
+            title="Tải về file CSV để mở bằng Excel hoặc Google Sheets"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Xuất CSV</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            title="Tải lại dữ liệu"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+
+          {isAdmin && (
             <Button
-              variant="outline"
               size="sm"
-              onClick={handleExportCSV}
-              className="text-xs gap-1.5 border-border/80"
-              title="Tải về file CSV để mở bằng Excel hoặc Google Sheets"
+              onClick={handleOpenAdd}
+              className="h-8 text-xs gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Xuất CSV / Excel</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Ghi nhận xuất</span>
             </Button>
-
-            {isAdmin && (
-              <Button
-                variant="gradient"
-                size="sm"
-                onClick={handleOpenAdd}
-                className="text-xs gap-1.5 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Ghi nhận xuất</span>
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* 4 Thẻ KPI thống kê nhanh */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Tổng số dòng xuất
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{stats.total}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Dữ liệu toàn hệ thống</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Bảng đã xuất
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Layers className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{stats.boardCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Mã bảng khác nhau</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Khuôn đã xuất
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Box className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{stats.moldCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Mã khuôn duy nhất</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/70 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              PO hoàn tất
-            </CardTitle>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Hash className="w-3.5 h-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3">
-            <div className="text-xl font-bold font-mono">{stats.poCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Lô hàng xuất xưởng</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Thanh công cụ tìm kiếm và lọc kiểu Google Sheets */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-card/40 p-3 rounded-2xl border border-border/60 backdrop-blur-sm shrink-0">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1">
-          {/* Ô tìm kiếm */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {/* Thanh công cụ tìm kiếm và lọc phân đoạn kiểu Linear */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-card/40 p-2 rounded-xl border border-border/50 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          {/* Ô tìm kiếm nội bộ */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Gõ mã bảng, khuôn, số PO để lọc..."
-              className="w-full h-8 bg-background/60 border border-input rounded-xl pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Lọc mã bảng, khuôn, PO..."
+              className="w-full h-8 bg-card/60 border border-border/60 rounded-lg pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/80"
             />
           </div>
 
           {/* Lọc theo loại */}
-          <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-border/60 text-xs">
+          <div className="flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-lg border border-border/50 text-xs">
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'board', label: 'Bảng' },
@@ -272,9 +223,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(t.id as ExportTypeFilter)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
                   typeFilter === t.id
-                    ? 'bg-primary text-white shadow-sm'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -284,7 +235,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
           </div>
 
           {/* Lọc theo ngày */}
-          <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-border/60 text-xs">
+          <div className="flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-lg border border-border/50 text-xs">
             {[
               { id: 'all', label: 'Mọi lúc' },
               { id: 'today', label: 'Hôm nay' },
@@ -294,9 +245,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
               <button
                 key={d.id}
                 onClick={() => setDateFilter(d.id as ExportDateFilter)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
                   dateFilter === d.id
-                    ? 'bg-secondary-foreground text-background shadow-sm'
+                    ? 'bg-foreground text-background shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -306,23 +257,13 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end lg:self-auto">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            title="Tải lại dữ liệu"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Làm mới</span>
-          </Button>
+        <div className="text-[11px] text-muted-foreground font-mono px-2">
+          {filteredList.length} kết quả
         </div>
       </div>
 
-      {/* Bảng dữ liệu dạng Google Sheets */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Bảng dữ liệu dạng Google Sheets phẳng tối giản */}
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
         <ExportTable
           items={filteredList}
           isAdmin={isAdmin}

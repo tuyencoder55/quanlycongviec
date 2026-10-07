@@ -7,27 +7,24 @@ import {
   DialogDescription,
 } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
 import { Input } from '../../../components/ui/input';
 import {
   Sparkles,
   UploadCloud,
   CheckCircle2,
   AlertCircle,
-  Layers,
-  Box,
-  Hash,
   RefreshCw,
-  FileText,
   Calendar,
   ArrowRight,
   Check,
-  X,
-  Image as ImageIcon,
+  Key,
+  ExternalLink,
 } from 'lucide-react';
 import {
   scanScreenshotWithGemini,
   matchScannedItemsWithSystem,
+  getGeminiApiKey,
+  saveGeminiApiKey,
   type MatchedScannedItem,
 } from '../utils/ai-scanner';
 import { useExports } from '../hooks/use-exports';
@@ -54,6 +51,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   const allTasks = columns.flatMap((c) => c.tasks);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [rawImageData, setRawImageData] = useState<{ base64: string; mimeType: string } | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [matchedItems, setMatchedItems] = useState<MatchedScannedItem[]>([]);
@@ -61,13 +59,36 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoCompleteTasks, setAutoCompleteTasks] = useState(true);
 
+  // Quản lý API Key tiện lợi ngay trên giao diện
+  const [currentKey, setCurrentKey] = useState<string>(() => getGeminiApiKey());
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getGeminiApiKey());
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cập nhật key mỗi khi mở modal
+  useEffect(() => {
+    if (isOpen) {
+      const saved = getGeminiApiKey();
+      setCurrentKey(saved);
+      setApiKeyInput(saved);
+      if (!saved) {
+        setShowKeyConfig(true);
+      }
+    }
+  }, [isOpen]);
 
   // Lắng nghe phím Ctrl + V dán ảnh
   useEffect(() => {
     if (!isOpen) return;
 
     const handlePaste = (e: ClipboardEvent) => {
+      // Nếu người dùng đang gõ trong input text (ví dụ input API key), không can thiệp paste
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        return;
+      }
+
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -85,7 +106,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [isOpen]);
+  }, [isOpen, currentKey]);
 
   // Xử lý file ảnh khi dán hoặc upload
   const handleProcessImageFile = (file: File) => {
@@ -97,19 +118,21 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
 
       // Tách base64 data không kèm header data:image/xxx;base64,
       const base64Data = result.split(',')[1];
+      const mime = file.type || 'image/png';
       if (base64Data) {
-        await runAiScan(base64Data, file.type || 'image/png');
+        setRawImageData({ base64: base64Data, mimeType: mime });
+        await runAiScan(base64Data, mime);
       }
     };
     reader.readAsDataURL(file);
   };
 
   // Gọi AI quét ảnh và đối chiếu dữ liệu
-  const runAiScan = async (base64Data: string, mimeType: string) => {
+  const runAiScan = async (base64Data: string, mimeType: string, customKey?: string) => {
     setIsScanning(true);
     setScanError(null);
     try {
-      const extractedList = await scanScreenshotWithGemini(base64Data, mimeType);
+      const extractedList = await scanScreenshotWithGemini(base64Data, mimeType, customKey);
       if (extractedList.length === 0) {
         setScanError('AI không tìm thấy tên file nào trong ảnh. Anh vui lòng kiểm tra lại ảnh chụp.');
         setMatchedItems([]);
@@ -121,9 +144,29 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
       setMatchedItems(matched);
     } catch (err: any) {
       console.error('Lỗi khi AI phân tích ảnh:', err);
-      setScanError(err.message || 'Lỗi khi AI đọc ảnh. Vui lòng thử lại.');
+      const msg = err.message || 'Lỗi khi AI đọc ảnh. Vui lòng thử lại.';
+      setScanError(msg);
+      // Nếu là lỗi xác thực, tự động mở phần cấu hình API Key để người dùng dễ kiểm tra
+      if (msg.includes('API') || msg.includes('401') || msg.includes('403') || msg.includes('Khóa API')) {
+        setShowKeyConfig(true);
+      }
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  // Lưu API Key và quét lại ảnh nếu có
+  const handleSaveKey = async () => {
+    const cleanKey = apiKeyInput.trim().replace(/^["']|["']$/g, '');
+    if (!cleanKey) return;
+    saveGeminiApiKey(cleanKey);
+    setCurrentKey(cleanKey);
+    setShowKeyConfig(false);
+    setScanError(null);
+
+    // Nếu đã có ảnh đang chờ, tự động quét lại ngay bằng key mới
+    if (rawImageData) {
+      await runAiScan(rawImageData.base64, rawImageData.mimeType, cleanKey);
     }
   };
 
@@ -217,6 +260,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   // Reset modal
   const handleReset = () => {
     setImagePreview(null);
+    setRawImageData(null);
     setMatchedItems([]);
     setScanError(null);
   };
@@ -242,19 +286,78 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
               </div>
             </div>
 
-            {imagePreview && (
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleReset}
-                className="h-7 text-xs gap-1 border-border/60 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowKeyConfig(!showKeyConfig)}
+                className={`h-7 text-xs gap-1 border-border/60 ${
+                  !currentKey
+                    ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Cấu hình Google Gemini API Key"
               >
-                <RefreshCw className="w-3 h-3" />
-                <span>Quét ảnh khác</span>
+                <Key className="w-3 h-3 text-amber-400" />
+                <span>{currentKey ? 'Đổi API Key' : 'Nhập API Key'}</span>
               </Button>
-            )}
+
+              {imagePreview && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-7 text-xs gap-1 border-border/60 text-muted-foreground hover:text-foreground"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Quét ảnh khác</span>
+                </Button>
+              )}
+            </div>
           </div>
         </DialogHeader>
+
+        {/* PHẦN CẤU HÌNH API KEY (TỰ ĐỘNG HIỆN HOẶC KHI BẤM NÚT) */}
+        {showKeyConfig && (
+          <div className="p-3 bg-secondary/60 rounded-xl border border-border/70 space-y-2.5 shrink-0 text-xs animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <Key className="w-3.5 h-3.5 text-primary" />
+                <span>Cấu hình Gemini API Key</span>
+              </div>
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+              >
+                <span>Lấy API Key miễn phí tại Google AI Studio</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="Dán mã API Key (ví dụ: AQ... hoặc AIzaSy...)"
+                className="h-8 text-xs font-mono bg-card/80 border-border/70"
+              />
+              <Button
+                size="sm"
+                onClick={handleSaveKey}
+                disabled={!apiKeyInput.trim()}
+                className="h-8 text-xs px-3 font-medium shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Lưu Key & Thử lại
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              API Key được lưu an toàn trực tiếp trên trình duyệt của anh (localStorage), không cần chỉnh file .env hay deploy lại Vercel.
+            </p>
+          </div>
+        )}
 
         {/* VÙNG 1: DÁN ẢNH HOẶC TẢI ẢNH (KHI CHƯA CÓ KẾT QUẢ) */}
         {!imagePreview ? (
@@ -321,9 +424,19 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
 
             {/* Báo lỗi nếu có */}
             {scanError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 shrink-0">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{scanError}</span>
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{scanError}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowKeyConfig(true)}
+                  className="h-6 text-[11px] px-2 text-rose-300 border-rose-500/30 hover:bg-rose-500/20 shrink-0"
+                >
+                  Đổi API Key
+                </Button>
               </div>
             )}
 

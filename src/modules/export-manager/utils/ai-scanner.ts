@@ -31,15 +31,43 @@ export interface MatchedScannedItem extends ScannedFileItem {
 }
 
 /**
+ * Lấy API Key từ localStorage trước, nếu không có mới lấy từ .env
+ */
+export function getGeminiApiKey(): string {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('gemini_api_key');
+    if (saved && saved.trim()) return saved.trim();
+  }
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (envKey && typeof envKey === 'string') return envKey.trim();
+  return '';
+}
+
+/**
+ * Lưu API Key vào localStorage để người dùng có thể đổi trực tiếp trên web
+ */
+export function saveGeminiApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    const cleanKey = key.trim().replace(/^["']|["']$/g, '');
+    if (cleanKey) {
+      localStorage.setItem('gemini_api_key', cleanKey);
+    } else {
+      localStorage.removeItem('gemini_api_key');
+    }
+  }
+}
+
+/**
  * Gọi Google Gemini AI đọc ảnh chụp màn hình và trích xuất danh sách file
  */
 export async function scanScreenshotWithGemini(
   base64Data: string,
-  mimeType: string = 'image/png'
+  mimeType: string = 'image/png',
+  customKey?: string
 ): Promise<ScannedFileItem[]> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = (customKey || getGeminiApiKey()).trim().replace(/^["']|["']$/g, '');
   if (!apiKey) {
-    throw new Error('Chưa cấu hình VITE_GEMINI_API_KEY trong file .env');
+    throw new Error('Chưa có Gemini API Key. Anh vui lòng nhập API Key để sử dụng tính năng này.');
   }
 
   const prompt = `Bạn là chuyên gia bóc tách tên file sản xuất cho xưởng in/khuôn bảng.
@@ -62,8 +90,6 @@ QUAN TRỌNG: Trả về duy nhất một mảng JSON các đối tượng, theo
   }
 ]`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-
   const payload = {
     contents: [
       {
@@ -84,40 +110,79 @@ QUAN TRỌNG: Trả về duy nhất một mảng JSON các đối tượng, theo
     },
   };
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  // Danh sách model ưu tiên thử theo thứ tự (tương thích cả AQ. và AIza keys)
+  const candidateModels = [
+    'gemini-3.5-flash-lite',
+    'gemini-3.8-flash',
+    'gemini-2.5-flash-lite',
+  ];
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Lỗi Gemini API (${response.status}): ${errText}`);
+  let lastError: Error | null = null;
+
+  for (const model of candidateModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        // 'omit' ngăn trình duyệt gửi cookie Google/OAuth gây lỗi 401 ACCESS_TOKEN_TYPE_UNSUPPORTED
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        let parsedErrMsg = '';
+        try {
+          const jsonErr = JSON.parse(errText);
+          parsedErrMsg = jsonErr.error?.message || '';
+        } catch {
+          // ignore parse error
+        }
+
+        // Nếu lỗi 404 (model không tìm thấy), thử model tiếp theo trong danh sách
+        if (response.status === 404) {
+          lastError = new Error(`Model ${model} không khả dụng. Đang thử model khác...`);
+          continue;
+        }
+
+        throw new Error(
+          parsedErrMsg || `Lỗi Gemini API (${response.status}): ${errText.slice(0, 300)}`
+        );
+      }
+
+      const result = await response.json();
+      const rawJson = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawJson) {
+        throw new Error('AI không nhận diện được văn bản hoặc không trả về nội dung.');
+      }
+
+      const parsed = JSON.parse(rawJson);
+      const list = Array.isArray(parsed) ? parsed : parsed.files || parsed.items || [];
+      return list
+        .map((item: any, idx: number) => ({
+          id: `ai-item-${Date.now()}-${idx}`,
+          full_name: String(item.full_name || item.name || '').trim(),
+          board_code: String(item.board_code || '').trim(),
+          mold_code: item.mold_code ? String(item.mold_code).trim() : undefined,
+          ref_kind: item.ref_kind === 'po' || item.ref_kind === 'date' ? item.ref_kind : undefined,
+          ref_value: item.ref_value ? String(item.ref_value).trim() : undefined,
+        }))
+        .filter((item: ScannedFileItem) => item.board_code || item.full_name);
+    } catch (err: any) {
+      lastError = err;
+      // Nếu là lỗi xác thực 401 hoặc permission 403, không cần loop mà ném lỗi ra ngay
+      if (err.message && (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key not valid'))) {
+        throw new Error(`Khóa API không hợp lệ hoặc chưa được kích hoạt (${err.message}). Anh kiểm tra lại API Key nhé.`);
+      }
+    }
   }
 
-  const result = await response.json();
-  const rawJson = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawJson) {
-    throw new Error('AI không nhận diện được văn bản hoặc không trả về dữ liệu.');
-  }
-
-  try {
-    const parsed = JSON.parse(rawJson);
-    const list = Array.isArray(parsed) ? parsed : parsed.files || parsed.items || [];
-    return list.map((item: any, idx: number) => ({
-      id: `ai-item-${Date.now()}-${idx}`,
-      full_name: String(item.full_name || item.name || '').trim(),
-      board_code: String(item.board_code || '').trim(),
-      mold_code: item.mold_code ? String(item.mold_code).trim() : undefined,
-      ref_kind: item.ref_kind === 'po' || item.ref_kind === 'date' ? item.ref_kind : undefined,
-      ref_value: item.ref_value ? String(item.ref_value).trim() : undefined,
-    })).filter((item: ScannedFileItem) => item.board_code || item.full_name);
-  } catch (parseErr) {
-    console.error('Lỗi phân tích JSON từ AI:', parseErr, rawJson);
-    throw new Error('Định dạng dữ liệu từ AI không hợp lệ.');
-  }
+  throw lastError || new Error('Không thể kết nối đến AI. Anh vui lòng kiểm tra lại mạng hoặc API Key.');
 }
 
 /**
@@ -130,7 +195,7 @@ export function matchScannedItemsWithSystem(
 ): MatchedScannedItem[] {
   return items.map((item) => {
     const boardLower = item.board_code.toLowerCase();
-    const moldLower = item.mold_code?.toLowerCase();
+    const moldLower = item.mold_code ? item.mold_code.toLowerCase() : undefined;
     const poVal = item.ref_value;
 
     // 1. Đối chiếu trên Kanban (Đã làm file chưa)

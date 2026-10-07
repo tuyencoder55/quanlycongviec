@@ -14,7 +14,9 @@ import {
   Box,
   Hash,
   Database,
+  Sparkles,
 } from 'lucide-react';
+import { AiScannerModal } from './components/ai-scanner-modal';
 
 interface ExportManagerProps {
   externalSearch?: string;
@@ -36,6 +38,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   const [typeFilter, setTypeFilter] = useState<ExportTypeFilter>('all');
   const [dateFilter, setDateFilter] = useState<ExportDateFilter>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExportItem | null>(null);
 
   // Lọc dữ liệu theo từ khóa và bộ lọc loại, ngày
@@ -237,14 +240,26 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
           </Button>
 
           {isAdmin && (
-            <Button
-              size="sm"
-              onClick={handleOpenAdd}
-              className="h-8 text-xs gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Ghi nhận xuất</span>
-            </Button>
+            <>
+              <Button
+                size="sm"
+                onClick={() => setIsAiScannerOpen(true)}
+                className="h-8 text-xs gap-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 shadow-xs px-2.5 transition-all"
+                title="Chụp màn hình và dán Ctrl+V để AI tự động nhận diện và đối chiếu"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <span>AI Quét ảnh (Ctrl+V)</span>
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={handleOpenAdd}
+                className="h-8 text-xs gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Ghi nhận xuất</span>
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -332,6 +347,14 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         initialItem={selectedItem}
         onSave={handleSave}
         isAdmin={isAdmin}
+      />
+
+      {/* Hộp thoại AI Đọc ảnh & Đối chiếu xuất xưởng */}
+      <AiScannerModal
+        isOpen={isAiScannerOpen}
+        onOpenChange={setIsAiScannerOpen}
+        isAdmin={isAdmin}
+        onSuccess={refetch}
       />
     </div>
   );

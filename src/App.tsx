@@ -5,13 +5,18 @@ import { KanbanBoard } from './modules/kanban';
 import { CompletedTasksScreen } from './modules/completed-tasks';
 import { ExportManager } from './modules/export-manager';
 import { Card } from './components/ui/card';
-import { FileSpreadsheet } from 'lucide-react';
+import { Button } from './components/ui/button';
+import { Sparkles, FileSpreadsheet } from 'lucide-react';
+import { useAuth } from './hooks/use-auth';
+import { AiScannerModal } from './modules/export-manager/components/ai-scanner-modal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('kanban');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [newTaskTrigger, setNewTaskTrigger] = useState<number>(0);
+  const [isAiScannerOpen, setIsAiScannerOpen] = useState<boolean>(false);
+  const { isAdmin } = useAuth();
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -79,19 +84,43 @@ export default function App() {
             )}
 
             {activeTab === 'bulk' && (
-              <Card className="border-dashed border border-border/80 bg-card/20 p-12 text-center rounded-xl my-auto">
-                <div className="max-w-md mx-auto space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 text-primary mx-auto flex items-center justify-center">
-                    <FileSpreadsheet className="w-6 h-6" />
+              <div className="flex-1 flex items-center justify-center p-4">
+                <Card className="border border-border/80 bg-card/40 p-8 max-w-lg w-full text-center rounded-2xl shadow-xl backdrop-blur-sm space-y-5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-500/30 text-indigo-400 mx-auto flex items-center justify-center">
+                    <Sparkles className="w-7 h-7" />
                   </div>
-                  <h4 className="text-base font-semibold text-foreground">
-                    Khu vực Thêm Hàng Loạt (Bulk Insert)
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Dán danh sách hàng chục tên file cùng lúc, tự động bóc tách mã Bảng, Khuôn, PO và đẩy vào bảng Kanban nhanh chóng.
-                  </p>
-                </div>
-              </Card>
+                  <div className="space-y-1.5">
+                    <h3 className="text-lg font-bold text-foreground">
+                      AI Tự Động Quét Ảnh & Đối Chiếu Xuất Xưởng
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Chụp màn hình danh sách tên file (thư mục, Excel, Zalo), AI sẽ tự động phân tích mã Bảng, Khuôn, PO, đối chiếu với Kanban và lịch sử xuất để tự động chuyển sang Xuất khuôn bảng.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      onClick={() => setIsAiScannerOpen(true)}
+                      className="h-10 px-5 gap-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 hover:from-indigo-600 hover:via-purple-700 hover:to-pink-600 text-white shadow-md hover:shadow-indigo-500/20 transition-all"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Mở Trình Quét AI (Ctrl + V)</span>
+                    </Button>
+                  </div>
+
+                  <div className="border-t border-border/40 pt-4 text-[11px] text-muted-foreground flex items-center justify-center gap-2 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Hỗ trợ dán ảnh phím tắt Ctrl + V trực tiếp</span>
+                  </div>
+                </Card>
+
+                <AiScannerModal
+                  isOpen={isAiScannerOpen}
+                  onOpenChange={setIsAiScannerOpen}
+                  isAdmin={isAdmin}
+                  onSuccess={() => setActiveTab('search')}
+                />
+              </div>
             )}
           </div>
         </main>

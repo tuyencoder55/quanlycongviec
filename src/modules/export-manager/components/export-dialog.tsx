@@ -101,10 +101,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {initialItem ? 'Chỉnh Sửa Dòng Xuất Xưởng' : 'Ghi Nhận Xuất Xưởng Mới'}
+              {initialItem ? 'Chỉnh Sửa Dòng Xuất Khuôn Bảng' : 'Ghi Nhận Xuất Khuôn Bảng Mới'}
             </DialogTitle>
             <DialogDescription>
-              Lưu trữ thông tin xuất xưởng vào cơ sở dữ liệu. Nhập tên file để hệ thống tự động bóc tách mã.
+              Lưu trữ thông tin xuất khuôn bảng vào cơ sở dữ liệu. Nhập tên file để hệ thống tự động bóc tách mã.
             </DialogDescription>
           </DialogHeader>
 

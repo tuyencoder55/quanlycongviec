@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <Search className="w-4 h-4 text-cyan-400" />
-            <span className="flex-1">Tra cứu xuất xưởng</span>
+            <span className="flex-1">Tra cứu xuất khuôn bảng</span>
           </button>
 
           <button

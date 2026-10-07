@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { ExportItem } from '../types';
 import { formatDate } from '../../../lib/utils';
-import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import {
   Copy,
@@ -13,27 +12,84 @@ import {
   Hash,
   ArrowUpDown,
   FileText,
+  Calendar,
 } from 'lucide-react';
 
 interface ExportTableProps {
   items: ExportItem[];
+  allExports?: ExportItem[];
   isAdmin: boolean;
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
 }
 
-type SortField = 'exported_at' | 'board_code' | 'mold_code' | 'ref_value' | 'type';
+type SortField =
+  | 'board_code'
+  | 'mold_code'
+  | 'ref_value'
+  | 'board_date'
+  | 'mold_date'
+  | 'po_date'
+  | 'full_name';
 type SortOrder = 'asc' | 'desc';
 
 export const ExportTable: React.FC<ExportTableProps> = ({
   items,
+  allExports = [],
   isAdmin,
   onEdit,
   onDelete,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<SortField>('exported_at');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortField, setSortField] = useState<SortField>('board_code');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const pool = allExports.length > 0 ? allExports : items;
+
+  // Tra cứu chéo ngày xuất riêng biệt cho từng thành phần: Bảng, Khuôn, PO
+  const getExportDates = (item: ExportItem) => {
+    // 1. Ngày xuất Bảng: lấy từ chính dòng này (nếu là board) hoặc dòng xuất bảng có cùng mã
+    let boardDate: string | null = null;
+    if (item.type === 'board') {
+      boardDate = item.exported_at;
+    } else if (item.board_code) {
+      const found = pool.find(
+        (e) => e.type === 'board' && e.board_code.toLowerCase() === item.board_code.toLowerCase()
+      );
+      if (found) boardDate = found.exported_at;
+    }
+
+    // 2. Ngày xuất Khuôn: lấy từ chính dòng này (nếu là mold) hoặc dòng xuất khuôn có cùng mã khuôn
+    let moldDate: string | null = null;
+    if (item.type === 'mold') {
+      moldDate = item.exported_at;
+    } else if (item.mold_code) {
+      const moldCodeLower = item.mold_code.toLowerCase();
+      const found = pool.find(
+        (e) =>
+          e.type === 'mold' &&
+          e.mold_code &&
+          e.mold_code.toLowerCase() === moldCodeLower
+      );
+      if (found) moldDate = found.exported_at;
+    }
+
+    // 3. Ngày xuất PO: lấy từ chính dòng này (nếu là PO) hoặc dòng xuất PO có cùng mã bảng & số PO
+    let poDate: string | null = null;
+    if (item.type === 'po') {
+      poDate = item.exported_at;
+    } else if (item.ref_value) {
+      const found = pool.find(
+        (e) =>
+          e.type === 'po' &&
+          e.board_code.toLowerCase() === item.board_code.toLowerCase() &&
+          e.ref_value === item.ref_value
+      );
+      if (found) poDate = found.exported_at;
+    }
+
+    return { boardDate, moldDate, poDate };
+  };
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -54,44 +110,29 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
   // Sắp xếp dữ liệu theo cột được chọn
   const sortedItems = [...items].sort((a, b) => {
-    let valA = a[sortField] || '';
-    let valB = b[sortField] || '';
-    if (sortField === 'exported_at') {
-      valA = new Date(valA).getTime().toString();
-      valB = new Date(valB).getTime().toString();
+    const datesA = getExportDates(a);
+    const datesB = getExportDates(b);
+
+    let valA = '';
+    let valB = '';
+
+    if (sortField === 'board_date') {
+      valA = datesA.boardDate || '';
+      valB = datesB.boardDate || '';
+    } else if (sortField === 'mold_date') {
+      valA = datesA.moldDate || '';
+      valB = datesB.moldDate || '';
+    } else if (sortField === 'po_date') {
+      valA = datesA.poDate || '';
+      valB = datesB.poDate || '';
+    } else {
+      valA = a[sortField] || '';
+      valB = b[sortField] || '';
     }
+
     const cmp = valA.localeCompare(valB);
     return sortOrder === 'asc' ? cmp : -cmp;
   });
-
-  // Kiểu hiển thị theo loại xuất
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'board':
-        return (
-          <Badge variant="indigo" className="gap-1 font-mono text-[10px] px-2 py-0.5">
-            <Layers className="w-3 h-3" />
-            <span>Bảng</span>
-          </Badge>
-        );
-      case 'mold':
-        return (
-          <Badge variant="emerald" className="gap-1 font-mono text-[10px] px-2 py-0.5">
-            <Box className="w-3 h-3" />
-            <span>Khuôn</span>
-          </Badge>
-        );
-      case 'po':
-        return (
-          <Badge variant="amber" className="gap-1 font-mono text-[10px] px-2 py-0.5">
-            <Hash className="w-3 h-3" />
-            <span>PO</span>
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
-  };
 
   if (items.length === 0) {
     return (
@@ -99,7 +140,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
         <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
         <h4 className="text-xs font-semibold text-foreground">Không có dữ liệu xuất nào</h4>
         <p className="text-[11px] text-muted-foreground mt-1">
-          Không tìm thấy dòng xuất xưởng nào phù hợp với bộ lọc tìm kiếm hiện tại.
+          Không tìm thấy dòng xuất khuôn bảng nào phù hợp với bộ lọc tìm kiếm hiện tại.
         </p>
       </div>
     );
@@ -114,26 +155,6 @@ export const ExportTable: React.FC<ExportTableProps> = ({
             <tr className="border-b border-border/80 bg-secondary/70 text-muted-foreground font-mono select-none">
               <th className="py-2.5 px-3 w-12 text-center border-r border-border/50 font-semibold">
                 #
-              </th>
-
-              <th
-                onClick={() => handleSort('exported_at')}
-                className="py-2.5 px-3 w-28 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Ngày xuất</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
-                </div>
-              </th>
-
-              <th
-                onClick={() => handleSort('type')}
-                className="py-2.5 px-3 w-24 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Loại</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
-                </div>
               </th>
 
               <th
@@ -166,12 +187,48 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                 </div>
               </th>
 
-              <th className="py-2.5 px-3 min-w-[280px] border-r border-border/50 font-semibold">
-                Tên đầy đủ (Tên file gốc)
+              {/* 3 Cột ngày xuất riêng biệt cho Bảng, Khuôn và PO */}
+              <th
+                onClick={() => handleSort('board_date')}
+                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-1.5 text-indigo-400">
+                  <Layers className="w-3 h-3" />
+                  <span>Ngày xuất Bảng</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                </div>
               </th>
 
-              <th className="py-2.5 px-3 w-44 border-r border-border/50 font-semibold">
-                Ghi chú
+              <th
+                onClick={() => handleSort('mold_date')}
+                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-1.5 text-emerald-400">
+                  <Box className="w-3 h-3" />
+                  <span>Ngày xuất Khuôn</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('po_date')}
+                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-1.5 text-amber-400">
+                  <Hash className="w-3 h-3" />
+                  <span>Ngày xuất PO</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('full_name')}
+                className="py-2.5 px-3 min-w-[280px] border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Tên đầy đủ (Tên file gốc)</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                </div>
               </th>
 
               {isAdmin && (
@@ -185,6 +242,8 @@ export const ExportTable: React.FC<ExportTableProps> = ({
           {/* Dữ liệu các dòng Bảng tính */}
           <tbody className="divide-y divide-border/50 font-mono">
             {sortedItems.map((item, index) => {
+              const { boardDate, moldDate, poDate } = getExportDates(item);
+
               const isNameCopied = copiedId === `name-${item.id}`;
               const isBoardCopied = copiedId === `board-${item.id}`;
               const isMoldCopied = copiedId === `mold-${item.id}`;
@@ -198,16 +257,6 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   {/* STT */}
                   <td className="py-2 px-3 text-center text-muted-foreground/70 font-mono text-[11px] border-r border-border/40 bg-secondary/15">
                     {index + 1}
-                  </td>
-
-                  {/* Ngày xuất */}
-                  <td className="py-2 px-3 font-mono text-[11px] text-foreground/90 whitespace-nowrap border-r border-border/40">
-                    {formatDate(item.exported_at)}
-                  </td>
-
-                  {/* Loại xuất */}
-                  <td className="py-2 px-3 border-r border-border/40 whitespace-nowrap">
-                    {getTypeBadge(item.type)}
                   </td>
 
                   {/* Mã Bảng */}
@@ -266,6 +315,42 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                     )}
                   </td>
 
+                  {/* 1. Ngày xuất Bảng */}
+                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                    {boardDate ? (
+                      <span className="inline-flex items-center gap-1 text-indigo-400/90 font-medium">
+                        <Calendar className="w-3 h-3 opacity-60" />
+                        <span>{formatDate(boardDate)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/30 font-sans">-</span>
+                    )}
+                  </td>
+
+                  {/* 2. Ngày xuất Khuôn */}
+                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                    {moldDate ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-400/90 font-medium">
+                        <Calendar className="w-3 h-3 opacity-60" />
+                        <span>{formatDate(moldDate)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/30 font-sans">-</span>
+                    )}
+                  </td>
+
+                  {/* 3. Ngày xuất PO */}
+                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                    {poDate ? (
+                      <span className="inline-flex items-center gap-1 text-amber-400/90 font-medium">
+                        <Calendar className="w-3 h-3 opacity-60" />
+                        <span>{formatDate(poDate)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/30 font-sans">-</span>
+                    )}
+                  </td>
+
                   {/* Tên đầy đủ (File) */}
                   <td className="py-2 px-3 border-r border-border/40 font-mono text-[11px] text-foreground/80">
                     <div
@@ -285,11 +370,6 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                         )}
                       </button>
                     </div>
-                  </td>
-
-                  {/* Ghi chú */}
-                  <td className="py-2 px-3 border-r border-border/40 text-muted-foreground text-xs truncate max-w-[180px]">
-                    {item.note || <span className="text-muted-foreground/30">-</span>}
                   </td>
 
                   {/* Thao tác (Chỉ Admin) */}
@@ -330,8 +410,10 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
       {/* Footer bảng tính tổng kết số dòng */}
       <div className="py-2 px-4 bg-secondary/40 border-t border-border/70 flex items-center justify-between text-[11px] font-mono text-muted-foreground select-none">
-        <span>Tổng cộng: <strong className="text-foreground">{items.length}</strong> dòng xuất</span>
-        <span>Mẹo: Nhấp đúp vào bất kỳ ô mã nào để copy nhanh</span>
+        <span>
+          Tổng cộng: <strong className="text-foreground">{items.length}</strong> dòng xuất khuôn bảng
+        </span>
+        <span>Mẹo: Nhấp vào bất kỳ ô mã hoặc tên file nào để copy nhanh</span>
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ interface HeaderProps {
 const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string }> = {
   kanban: { title: 'Danh sách việc', subtitle: 'Danh sách có checkbox hoàn thành' },
   completed: { title: 'Đã hoàn thành', subtitle: 'Lịch sử & kho lưu trữ' },
-  search: { title: 'Tra cứu xuất xưởng', subtitle: 'Danh mục Bảng, Khuôn & PO' },
+  search: { title: 'Tra cứu xuất khuôn bảng', subtitle: 'Danh mục Bảng, Khuôn & PO' },
   bulk: { title: 'Thêm hàng loạt', subtitle: 'Bóc tách mã file tự động' },
 };
 

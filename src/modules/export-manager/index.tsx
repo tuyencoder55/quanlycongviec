@@ -91,7 +91,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
 
   const handleDelete = async (id: string) => {
     if (!isAdmin) return;
-    if (window.confirm('Anh có chắc muốn xóa dòng xuất xưởng này khỏi database không?')) {
+    if (window.confirm('Anh có chắc muốn xóa dòng xuất khuôn bảng này khỏi database không?')) {
       await deleteExport(id);
     }
   };
@@ -106,24 +106,76 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
 
   // Xuất file CSV để mở trực tiếp trong Excel hoặc Google Sheets
   const handleExportCSV = () => {
-    const headers = ['STT', 'Ngày xuất', 'Loại', 'Mã Bảng', 'Mã Khuôn', 'Số PO/Tham chiếu', 'Tên đầy đủ', 'Ghi chú'];
-    const rows = filteredList.map((item, idx) => [
-      idx + 1,
-      item.exported_at,
-      item.type,
-      item.board_code,
-      item.mold_code || '',
-      item.ref_value || '',
-      `"${item.full_name.replace(/"/g, '""')}"`,
-      `"${(item.note || '').replace(/"/g, '""')}"`,
-    ]);
+    const headers = [
+      'STT',
+      'Mã Bảng',
+      'Mã Khuôn',
+      'Số PO/Tham chiếu',
+      'Ngày xuất Bảng',
+      'Ngày xuất Khuôn',
+      'Ngày xuất PO',
+      'Tên đầy đủ',
+    ];
+
+    const rows = filteredList.map((item, idx) => {
+      // 1. Ngày xuất Bảng
+      let boardDate = '';
+      if (item.type === 'board') {
+        boardDate = item.exported_at;
+      } else if (item.board_code) {
+        const found = exportsList.find(
+          (e) => e.type === 'board' && e.board_code.toLowerCase() === item.board_code.toLowerCase()
+        );
+        if (found) boardDate = found.exported_at;
+      }
+
+      // 2. Ngày xuất Khuôn
+      let moldDate = '';
+      if (item.type === 'mold') {
+        moldDate = item.exported_at;
+      } else if (item.mold_code) {
+        const moldCodeLower = item.mold_code.toLowerCase();
+        const found = exportsList.find(
+          (e) =>
+            e.type === 'mold' &&
+            e.mold_code &&
+            e.mold_code.toLowerCase() === moldCodeLower
+        );
+        if (found) moldDate = found.exported_at;
+      }
+
+      // 3. Ngày xuất PO
+      let poDate = '';
+      if (item.type === 'po') {
+        poDate = item.exported_at;
+      } else if (item.ref_value) {
+        const found = exportsList.find(
+          (e) =>
+            e.type === 'po' &&
+            e.board_code.toLowerCase() === item.board_code.toLowerCase() &&
+            e.ref_value === item.ref_value
+        );
+        if (found) poDate = found.exported_at;
+      }
+
+      return [
+        idx + 1,
+        item.board_code,
+        item.mold_code || '',
+        item.ref_value ? (item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value) : '',
+        boardDate,
+        moldDate,
+        poDate,
+        `"${item.full_name.replace(/"/g, '""')}"`,
+      ];
+    });
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `xuat_xuong_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `xuat_khuon_bang_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -266,6 +318,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
       <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
         <ExportTable
           items={filteredList}
+          allExports={exportsList}
           isAdmin={isAdmin}
           onEdit={handleEdit}
           onDelete={handleDelete}

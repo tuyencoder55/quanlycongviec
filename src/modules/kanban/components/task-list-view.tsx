@@ -1,7 +1,7 @@
 import React from 'react';
 import type { KanbanTask, KanbanColumn } from '../types';
 import { TaskListRow } from './task-list-row';
-import { Plus, CheckSquare, Layers, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, CheckCircle2 } from 'lucide-react';
 
 interface TaskListViewProps {
   tasks: KanbanTask[];
@@ -34,25 +34,25 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           {/* Header Bảng danh sách */}
           <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur-md border-b border-border/60 text-muted-foreground font-mono select-none">
             <tr>
-              <th className="py-2.5 px-3 w-10 text-center">
-                <CheckSquare className="w-3.5 h-3.5 mx-auto text-muted-foreground/60" />
+              <th className="py-2.5 px-3 w-12 text-center border-r border-border/40 font-mono font-medium">
+                #
               </th>
-              <th className="py-2.5 px-3 min-w-[240px] font-medium">
+              <th className="py-2.5 px-3 min-w-[240px] font-medium border-r border-border/40">
                 Tên công việc / Tên file
               </th>
-              <th className="py-2.5 px-3 min-w-[160px] font-medium">
+              <th className="py-2.5 px-3 min-w-[160px] font-medium border-r border-border/40">
                 Mã Bảng & Khuôn
               </th>
-              <th className="py-2.5 px-3 min-w-[130px] font-medium">
+              <th className="py-2.5 px-3 min-w-[130px] font-medium border-r border-border/40">
                 Số PO / Tham chiếu
               </th>
-              <th className="py-2.5 px-3 min-w-[120px] font-medium">
+              <th className="py-2.5 px-3 min-w-[120px] font-medium border-r border-border/40">
                 Hạn chót
               </th>
-              <th className="py-2.5 px-3 min-w-[100px] font-medium">
+              <th className="py-2.5 px-3 min-w-[90px] font-medium border-r border-border/40">
                 Ưu tiên
               </th>
-              <th className="py-2.5 px-3 min-w-[120px] font-medium">
+              <th className="py-2.5 px-3 min-w-[140px] font-medium border-r border-border/40">
                 Trạng thái
               </th>
               <th className="py-2.5 px-3 w-16 text-right font-medium">
@@ -63,9 +63,10 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
 
           {/* Dữ liệu các dòng công việc */}
           <tbody className="divide-y divide-border/30">
-            {tasks.map((task) => (
+            {tasks.map((task, index) => (
               <TaskListRow
                 key={task.id}
+                index={index}
                 task={task}
                 columns={columns}
                 isAdmin={isAdmin}

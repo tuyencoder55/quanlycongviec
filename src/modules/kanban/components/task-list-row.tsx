@@ -8,27 +8,28 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
+  FileText,
 } from 'lucide-react';
 import type { KanbanTask, KanbanColumn } from '../types';
 import { formatDate } from '../../../lib/utils';
-import { Badge } from '../../../components/ui/badge';
 
 interface TaskListRowProps {
+  index: number;
   task: KanbanTask;
   columns: KanbanColumn[];
   isAdmin: boolean;
   onToggleComplete: (task: KanbanTask) => Promise<void>;
-  onChangeColumn: (task: KanbanTask, columnId: string) => Promise<void>;
+  onChangeColumn?: (task: KanbanTask, columnId: string) => Promise<void>;
   onEdit: (task: KanbanTask) => void;
   onDelete: (taskId: string) => Promise<void>;
 }
 
 export const TaskListRow: React.FC<TaskListRowProps> = ({
+  index,
   task,
   columns,
   isAdmin,
   onToggleComplete,
-  onChangeColumn,
   onEdit,
   onDelete,
 }) => {
@@ -40,9 +41,6 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
     !isDone &&
     new Date(task.due_date).getTime() < new Date().setHours(0, 0, 0, 0);
 
-  // Chữ cái viết tắt làm avatar icon như hình mẫu [S] Send NDA, [R] Review proposal
-  const initialChar = (task.title.trim()[0] || 'T').toUpperCase();
-
   // Nhãn mức độ ưu tiên
   const priorityConfig = {
     urgent: { text: 'Khẩn cấp', class: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
@@ -51,56 +49,29 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
     low: { text: 'Thấp', class: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
   }[task.priority] || { text: 'Vừa', class: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' };
 
-  // Màu trạng thái cột giống chuẩn giao diện mẫu
-  const getStatusBadge = (colTitle: string) => {
-    const title = colTitle.toLowerCase();
-    if (title.includes('xong')) {
-      return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    }
-    if (title.includes('đang')) {
-      return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
-    }
-    return 'bg-secondary text-muted-foreground border-border/60';
-  };
-
   return (
     <tr
       onClick={() => onEdit(task)}
-      className={`group border-b border-border/40 hover:bg-accent/40 transition-colors cursor-pointer select-none text-xs ${
+      className={`group border-b border-border/30 hover:bg-accent/40 transition-colors cursor-pointer select-none text-xs ${
         isDone ? 'bg-card/20 text-muted-foreground/70' : 'bg-card/40 text-foreground'
       }`}
     >
-      {/* 1. Nút Checkbox hoàn thành ở đầu dòng */}
-      <td
-        className="py-2.5 px-3 w-10 text-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={() => onToggleComplete(task)}
-          className={`w-4.5 h-4.5 rounded flex items-center justify-center border transition-all ${
-            isDone
-              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
-              : 'border-muted-foreground/40 hover:border-primary/80 bg-background/50 hover:bg-background'
-          }`}
-          title={isDone ? 'Bấm để mở lại việc này' : 'Bấm để đánh dấu HOÀN THÀNH'}
-        >
-          {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-        </button>
+      {/* 1. Số thứ tự (STT) */}
+      <td className="py-2.5 px-3 w-12 text-center text-muted-foreground/70 font-mono text-[11px] border-r border-border/30 bg-secondary/15">
+        {index + 1}
       </td>
 
-      {/* 2. Tiêu đề công việc kèm icon avatar chữ tắt */}
-      <td className="py-2.5 px-3 font-medium min-w-[240px]">
+      {/* 2. Tiêu đề công việc kèm icon file tinh tế */}
+      <td className="py-2.5 px-3 font-medium min-w-[240px] border-r border-border/30">
         <div className="flex items-center gap-2.5">
-          {/* Badge chữ viết tắt tròn/vuông nhỏ xinh xắn giống hệt ảnh mẫu */}
           <div
-            className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold text-[10px] shrink-0 border ${
+            className={`w-6 h-6 rounded flex items-center justify-center shrink-0 border transition-colors ${
               isDone
-                ? 'bg-muted/50 text-muted-foreground border-border/40'
-                : 'bg-primary/15 text-primary border-primary/25'
+                ? 'bg-muted/40 text-muted-foreground/50 border-border/30'
+                : 'bg-primary/10 text-primary border-primary/20'
             }`}
           >
-            {initialChar}
+            <FileText className="w-3 h-3" />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -121,7 +92,7 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
       </td>
 
       {/* 3. Mã Bảng & Mã Khuôn */}
-      <td className="py-2.5 px-3 min-w-[160px] font-mono">
+      <td className="py-2.5 px-3 min-w-[160px] font-mono border-r border-border/30">
         <div className="flex items-center gap-1.5 flex-wrap">
           {task.board_code ? (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px]">
@@ -142,7 +113,7 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
       </td>
 
       {/* 4. Số PO / Ngày tham chiếu */}
-      <td className="py-2.5 px-3 min-w-[130px] font-mono text-muted-foreground">
+      <td className="py-2.5 px-3 min-w-[130px] font-mono text-muted-foreground border-r border-border/30">
         {task.ref_value ? (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">
             <Hash className="w-2.5 h-2.5" />
@@ -154,7 +125,7 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
       </td>
 
       {/* 5. Hạn chót (Due date) */}
-      <td className="py-2.5 px-3 min-w-[120px] font-mono whitespace-nowrap">
+      <td className="py-2.5 px-3 min-w-[120px] font-mono whitespace-nowrap border-r border-border/30">
         {task.due_date ? (
           <div
             className={`inline-flex items-center gap-1 text-[11px] ${
@@ -173,7 +144,7 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
       </td>
 
       {/* 6. Mức độ ưu tiên */}
-      <td className="py-2.5 px-3 min-w-[100px] whitespace-nowrap">
+      <td className="py-2.5 px-3 min-w-[90px] whitespace-nowrap border-r border-border/30">
         <span
           className={`text-[10px] font-medium px-1.5 py-0.2 rounded border font-mono inline-block ${priorityConfig.class}`}
         >
@@ -181,28 +152,44 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
         </span>
       </td>
 
-      {/* 7. Trạng thái (Cần làm / Đang làm / Xong) có thể click đổi nhanh */}
+      {/* 7. Trạng thái: Kiểu check hoàn thành 1-chạm (Click để tick xong / mở lại) */}
       <td
-        className="py-2.5 px-3 min-w-[120px] whitespace-nowrap"
+        className="py-2.5 px-3 min-w-[140px] whitespace-nowrap border-r border-border/30"
         onClick={(e) => e.stopPropagation()}
       >
-        <select
-          value={task.column_id}
-          onChange={(e) => onChangeColumn(task, e.target.value)}
+        <button
+          type="button"
+          onClick={() => onToggleComplete(task)}
           disabled={!isAdmin}
-          className={`h-6 rounded-md px-2 text-[11px] font-medium border focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer transition-colors ${getStatusBadge(
-            currentColumn?.title || ''
-          )}`}
+          className={`group/status inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer select-none ${
+            isDone
+              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+              : 'bg-secondary/60 border-border/70 text-muted-foreground hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-400'
+          }`}
+          title={isDone ? 'Bấm để đánh dấu chưa xong' : 'Bấm để check HOÀN THÀNH'}
         >
-          {columns.map((col) => (
-            <option key={col.id} value={col.id} className="bg-card text-foreground">
-              {col.title}
-            </option>
-          ))}
-        </select>
+          {/* Ô checkbox tương tác trực quan */}
+          <div
+            className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all shrink-0 ${
+              isDone
+                ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
+                : 'border-muted-foreground/40 bg-background/50 group-hover/status:border-emerald-500 group-hover/status:bg-emerald-500/20'
+            }`}
+          >
+            {isDone ? (
+              <Check className="w-2.5 h-2.5 stroke-[3]" />
+            ) : (
+              <Check className="w-2.5 h-2.5 text-emerald-400 opacity-0 group-hover/status:opacity-100 transition-opacity" />
+            )}
+          </div>
+
+          <span className="font-mono text-[11px]">
+            {isDone ? 'Hoàn thành' : (currentColumn?.title || 'Đang làm')}
+          </span>
+        </button>
       </td>
 
-      {/* 8. Thao tác: Nút Edit (hình cây bút như ảnh) và Xóa */}
+      {/* 8. Thao tác: Nút Edit (hình cây bút) và Xóa */}
       <td
         className="py-2.5 px-3 w-16 text-right whitespace-nowrap"
         onClick={(e) => e.stopPropagation()}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Menu, Sun, Moon, Sparkles } from 'lucide-react';
+import { Search, Menu, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
@@ -91,18 +91,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Moon className="w-3.5 h-3.5 text-slate-700" />
           )}
         </Button>
-
-        {/* Nút thêm việc nhanh nếu là Admin */}
-        {isAdmin && (
-          <Button
-            onClick={onNewTaskClick}
-            size="sm"
-            className="h-8 gap-1.5 text-xs font-medium rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm px-3"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Thẻ việc</span>
-          </Button>
-        )}
       </div>
     </header>
   );

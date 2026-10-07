@@ -52,11 +52,8 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
               <th className="py-2.5 px-3 min-w-[90px] font-medium border-r border-border/40">
                 Ưu tiên
               </th>
-              <th className="py-2.5 px-3 min-w-[140px] font-medium border-r border-border/40">
+              <th className="py-2.5 px-3 min-w-[140px] font-medium">
                 Trạng thái
-              </th>
-              <th className="py-2.5 px-3 w-16 text-right font-medium">
-                Thao tác
               </th>
             </tr>
           </thead>
@@ -73,7 +70,6 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                 onToggleComplete={onToggleComplete}
                 onChangeColumn={onChangeColumn}
                 onEdit={onEditTask}
-                onDelete={onDeleteTask}
               />
             ))}
           </tbody>

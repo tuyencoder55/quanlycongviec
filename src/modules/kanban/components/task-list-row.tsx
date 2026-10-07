@@ -5,10 +5,7 @@ import {
   Layers,
   Box,
   Hash,
-  Edit2,
-  Trash2,
   AlertCircle,
-  FileText,
 } from 'lucide-react';
 import type { KanbanTask, KanbanColumn } from '../types';
 import { formatDate } from '../../../lib/utils';
@@ -21,7 +18,7 @@ interface TaskListRowProps {
   onToggleComplete: (task: KanbanTask) => Promise<void>;
   onChangeColumn?: (task: KanbanTask, columnId: string) => Promise<void>;
   onEdit: (task: KanbanTask) => void;
-  onDelete: (taskId: string) => Promise<void>;
+  onDelete?: (taskId: string) => Promise<void>;
 }
 
 export const TaskListRow: React.FC<TaskListRowProps> = ({
@@ -31,7 +28,6 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
   isAdmin,
   onToggleComplete,
   onEdit,
-  onDelete,
 }) => {
   const currentColumn = columns.find((c) => c.id === task.column_id);
   const isDone = task.done || currentColumn?.title.toLowerCase().includes('xong');
@@ -61,33 +57,21 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
         {index + 1}
       </td>
 
-      {/* 2. Tiêu đề công việc kèm icon file tinh tế */}
+      {/* 2. Tiêu đề công việc (không có icon phía trước) */}
       <td className="py-2.5 px-3 font-medium min-w-[240px] border-r border-border/30">
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`w-6 h-6 rounded flex items-center justify-center shrink-0 border transition-colors ${
-              isDone
-                ? 'bg-muted/40 text-muted-foreground/50 border-border/30'
-                : 'bg-primary/10 text-primary border-primary/20'
+        <div className="min-w-0">
+          <span
+            className={`font-mono text-xs truncate block ${
+              isDone ? 'line-through text-muted-foreground/60' : 'text-foreground'
             }`}
           >
-            <FileText className="w-3 h-3" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <span
-              className={`font-mono text-xs truncate block ${
-                isDone ? 'line-through text-muted-foreground' : 'text-foreground'
-              }`}
-            >
-              {task.title}
-            </span>
-            {task.description && (
-              <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">
-                {task.description}
-              </p>
-            )}
-          </div>
+            {task.title}
+          </span>
+          {task.description && (
+            <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">
+              {task.description}
+            </p>
+          )}
         </div>
       </td>
 
@@ -154,7 +138,7 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
 
       {/* 7. Trạng thái: Kiểu check hoàn thành 1-chạm (Click để tick xong / mở lại) */}
       <td
-        className="py-2.5 px-3 min-w-[140px] whitespace-nowrap border-r border-border/30"
+        className="py-2.5 px-3 min-w-[140px] whitespace-nowrap"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -187,31 +171,6 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
             {isDone ? 'Hoàn thành' : (currentColumn?.title || 'Đang làm')}
           </span>
         </button>
-      </td>
-
-      {/* 8. Thao tác: Nút Edit (hình cây bút) và Xóa */}
-      <td
-        className="py-2.5 px-3 w-16 text-right whitespace-nowrap"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onEdit(task)}
-            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            title="Sửa chi tiết"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          {isAdmin && (
-            <button
-              onClick={() => onDelete(task.id)}
-              className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              title="Xóa công việc"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
       </td>
     </tr>
   );

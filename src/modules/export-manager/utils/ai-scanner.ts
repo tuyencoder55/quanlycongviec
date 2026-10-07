@@ -31,15 +31,39 @@ export interface MatchedScannedItem extends ScannedFileItem {
 }
 
 /**
- * Lấy API Key từ localStorage trước, nếu không có mới lấy từ .env
+ * Lọc sạch chuỗi API Key: loại bỏ khoảng trắng, các từ ghi chú kèm theo như "apikey day nha em"
+ */
+export function sanitizeApiKey(input: string): string {
+  if (!input) return '';
+  let key = input.trim();
+  // Loại bỏ các chữ ghi chú hay bị copy dính vào như "apikey", "api key", "day nha em", etc.
+  key = key.replace(/(?:api[_\s-]?key|day nha em|khoa api|key:).*$/gi, '').trim();
+  // Lấy token đầu tiên (không chứa dấu cách hay xuống dòng)
+  key = key.split(/\s+/)[0] || '';
+  // Chỉ giữ lại ký tự hợp lệ cho header HTTP và token Google (A-Za-z0-9_.-)
+  key = key.replace(/[^A-Za-z0-9_.-]/g, '');
+  return key;
+}
+
+/**
+ * Lấy API Key từ localStorage trước, nếu không có lấy từ .env
  */
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('gemini_api_key');
-    if (saved && saved.trim()) return saved.trim();
+    if (saved && saved.trim()) {
+      const sanitized = sanitizeApiKey(saved);
+      if (sanitized !== saved) {
+        localStorage.setItem('gemini_api_key', sanitized);
+      }
+      if (sanitized) return sanitized;
+    }
   }
   const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string') return envKey.trim();
+  if (envKey && typeof envKey === 'string') {
+    const sanitized = sanitizeApiKey(envKey);
+    if (sanitized) return sanitized;
+  }
   return '';
 }
 
@@ -48,7 +72,7 @@ export function getGeminiApiKey(): string {
  */
 export function saveGeminiApiKey(key: string): void {
   if (typeof window !== 'undefined') {
-    const cleanKey = key.trim().replace(/^["']|["']$/g, '');
+    const cleanKey = sanitizeApiKey(key);
     if (cleanKey) {
       localStorage.setItem('gemini_api_key', cleanKey);
     } else {
@@ -65,7 +89,7 @@ export async function scanScreenshotWithGemini(
   mimeType: string = 'image/png',
   customKey?: string
 ): Promise<ScannedFileItem[]> {
-  const apiKey = (customKey || getGeminiApiKey()).trim().replace(/^["']|["']$/g, '');
+  const apiKey = sanitizeApiKey(customKey || getGeminiApiKey());
   if (!apiKey) {
     throw new Error('Chưa có Gemini API Key. Anh vui lòng nhập API Key để sử dụng tính năng này.');
   }

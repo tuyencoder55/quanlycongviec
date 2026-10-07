@@ -25,6 +25,7 @@ import {
   matchScannedItemsWithSystem,
   getGeminiApiKey,
   saveGeminiApiKey,
+  sanitizeApiKey,
   type MatchedScannedItem,
 } from '../utils/ai-scanner';
 import { useExports } from '../hooks/use-exports';
@@ -156,11 +157,13 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   };
 
   // Lưu API Key và quét lại ảnh nếu có
-  const handleSaveKey = async () => {
-    const cleanKey = apiKeyInput.trim().replace(/^["']|["']$/g, '');
+  const handleSaveKey = async (overrideKey?: string) => {
+    const targetKey = overrideKey !== undefined ? overrideKey : apiKeyInput;
+    const cleanKey = sanitizeApiKey(targetKey);
     if (!cleanKey) return;
     saveGeminiApiKey(cleanKey);
     setCurrentKey(cleanKey);
+    setApiKeyInput(cleanKey);
     setShowKeyConfig(false);
     setScanError(null);
 
@@ -346,7 +349,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
               />
               <Button
                 size="sm"
-                onClick={handleSaveKey}
+                onClick={() => handleSaveKey()}
                 disabled={!apiKeyInput.trim()}
                 className="h-8 text-xs px-3 font-medium shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground"
               >

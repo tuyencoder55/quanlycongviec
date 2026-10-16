@@ -171,6 +171,30 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
     });
   };
 
+  // Cập nhật trạng thái Hoàn thành hàng loạt cho danh sách công việc được chọn
+  const handleBatchComplete = async (taskIds: string[], done: boolean) => {
+    if (!isAdmin || taskIds.length === 0) return;
+    const doneCol = columns.find((c) => c.title.toLowerCase().includes('xong'));
+    const todoCol = columns.find((c) => c.title.toLowerCase().includes('cần làm')) || columns[0];
+
+    await Promise.all(
+      taskIds.map((id) => {
+        const task = allFilteredTasks.find((t) => t.id === id);
+        const targetColId = done
+          ? (doneCol ? doneCol.id : task?.column_id || '')
+          : (task?.column_id === doneCol?.id && todoCol ? todoCol.id : task?.column_id || '');
+
+        return updateTask({
+          id,
+          updates: {
+            done,
+            column_id: targetColId,
+          },
+        });
+      })
+    );
+  };
+
   // Lọc thẻ theo từ khóa tìm kiếm và segmented control tab
   const queryTerm = externalSearch.trim().toLowerCase();
   const filteredColumns = columns.map((col) => ({
@@ -337,6 +361,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ externalSearch = '' })
             onEditTask={handleCardClick}
             onDeleteTask={handleDeleteTask}
             onAddTask={() => handleOpenAdd()}
+            onBatchComplete={handleBatchComplete}
           />
         ) : (
           <div className="h-full overflow-x-auto pb-2">

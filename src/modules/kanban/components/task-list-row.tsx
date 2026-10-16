@@ -15,6 +15,8 @@ interface TaskListRowProps {
   task: KanbanTask;
   columns: KanbanColumn[];
   isAdmin: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   onToggleComplete: (task: KanbanTask) => Promise<void>;
   onChangeColumn?: (task: KanbanTask, columnId: string) => Promise<void>;
   onEdit: (task: KanbanTask) => void;
@@ -26,6 +28,8 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
   task,
   columns,
   isAdmin,
+  isSelected = false,
+  onToggleSelect,
   onToggleComplete,
   onEdit,
 }) => {
@@ -49,11 +53,34 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
     <tr
       onClick={() => onEdit(task)}
       className={`group border-b border-border/30 hover:bg-accent/40 transition-colors cursor-pointer select-none text-xs ${
-        isDone ? 'bg-card/20 text-muted-foreground/70' : 'bg-card/40 text-foreground'
+        isSelected
+          ? 'bg-primary/10 hover:bg-primary/15 border-primary/40'
+          : isDone
+          ? 'bg-card/20 text-muted-foreground/70'
+          : 'bg-card/40 text-foreground'
       }`}
     >
+      {/* 0. Checkbox chọn dòng hàng loạt */}
+      <td
+        className="py-2.5 px-2 w-9 text-center border-r border-border/30 bg-secondary/10"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleSelect?.();
+        }}
+      >
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {}}
+            className="w-3.5 h-3.5 rounded border-border/70 text-primary accent-primary cursor-pointer transition-transform group-hover:scale-110"
+            aria-label={`Chọn ${task.title}`}
+          />
+        </div>
+      </td>
+
       {/* 1. Số thứ tự (STT) */}
-      <td className="py-2.5 px-3 w-12 text-center text-muted-foreground/70 font-mono text-[11px] border-r border-border/30 bg-secondary/15">
+      <td className="py-2.5 px-2 w-10 text-center text-muted-foreground/70 font-mono text-[11px] border-r border-border/30 bg-secondary/15">
         {index + 1}
       </td>
 
@@ -112,9 +139,11 @@ export const TaskListRow: React.FC<TaskListRowProps> = ({
       <td className="py-2.5 px-3 min-w-[120px] font-mono whitespace-nowrap border-r border-border/30">
         {task.due_date ? (
           <div
-            className={`inline-flex items-center gap-1 text-[11px] ${
+            className={`flex items-center gap-1 text-[11px] ${
               isOverdue
                 ? 'text-rose-400 font-semibold'
+                : isDone
+                ? 'text-muted-foreground/60'
                 : 'text-muted-foreground'
             }`}
           >

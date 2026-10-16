@@ -168,6 +168,8 @@ export async function createExportApi(formData: ExportFormData): Promise<ExportI
     full_name: formData.full_name,
     exported_at: formData.exported_at,
     subfolder: formData.subfolder || null,
+    image_url: formData.image_url || null,
+    file_size_bytes: formData.file_size_bytes || null,
     note: formData.note || null,
   };
 
@@ -181,6 +183,8 @@ export async function createExportApi(formData: ExportFormData): Promise<ExportI
     full_name: formData.full_name,
     exported_at: formData.exported_at,
     subfolder: formData.subfolder || null,
+    image_url: formData.image_url || null,
+    file_size_bytes: formData.file_size_bytes || null,
     note: formData.note || null,
     created_by: null,
     created_at: new Date().toISOString(),

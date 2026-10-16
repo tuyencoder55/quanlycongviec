@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,20 @@ import { Badge } from '../../../components/ui/badge';
 import type { ExportItem, ExportFormData } from '../types';
 import type { ExportType } from '../../../types/database';
 import { parseTaskTitle } from '../../kanban/utils/parser';
-import { Sparkles, Layers, Box, Hash } from 'lucide-react';
+import {
+  Sparkles,
+  Layers,
+  Box,
+  Hash,
+  FileImage,
+  UploadCloud,
+  X,
+  Eye,
+  RefreshCw,
+  Paperclip,
+} from 'lucide-react';
+import { optimizeImage, formatBytes } from '../utils/image-optimizer';
+import { uploadExportImage } from '../utils/storage-upload';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -42,7 +55,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const [exportedAt, setExportedAt] = useState(new Date().toISOString().split('T')[0]);
   const [subfolder, setSubfolder] = useState('');
   const [note, setNote] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fileSizeBytes, setFileSizeBytes] = useState<number | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialItem) {
@@ -54,6 +72,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setExportedAt(initialItem.exported_at || new Date().toISOString().split('T')[0]);
       setSubfolder(initialItem.subfolder || '');
       setNote(initialItem.note || '');
+      setImageUrl(initialItem.image_url || null);
+      setFileSizeBytes(initialItem.file_size_bytes || null);
     } else {
       setType('board');
       setFullName('');
@@ -63,8 +83,69 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setExportedAt(defaultDate || new Date().toISOString().split('T')[0]);
       setSubfolder(defaultSubfolder || '');
       setNote('');
+      setImageUrl(null);
+      setFileSizeBytes(null);
     }
   }, [initialItem, isOpen, defaultSubfolder, defaultDate]);
+
+  // Hỗ trợ dán ảnh trực tiếp từ clipboard (Ctrl + V) khi đang mở dialog
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleProcessOrderImage(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen, exportedAt, subfolder, boardCode]);
+
+  // Xử lý nén và tải ảnh đơn xuất
+  const handleProcessOrderImage = async (file: File) => {
+    setIsUploadingImage(true);
+    try {
+      const optimized = await optimizeImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85, // Siêu nét để đọc rõ chữ viết tay trên đơn
+        outputFormat: 'image/webp',
+      });
+
+      const folderArr = [
+        exportedAt.slice(0, 4),
+        exportedAt.slice(0, 7),
+        exportedAt.slice(5, 10),
+        subfolder.trim() || undefined,
+      ].filter(Boolean) as string[];
+
+      const cleanCode = (boardCode.trim() || 'don-xuat').toLowerCase();
+      const uploadedUrl = await uploadExportImage(
+        optimized.blob,
+        optimized.dataUrl,
+        `don_xuat_${cleanCode}`,
+        folderArr
+      );
+
+      setImageUrl(uploadedUrl);
+      setFileSizeBytes(optimized.optimizedSize);
+    } catch (err: any) {
+      console.error('Lỗi khi tải ảnh đơn xuất:', err);
+      alert('Không thể xử lý ảnh đơn xuất: ' + (err.message || 'Lỗi không xác định'));
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   // Phân tích tự động khi gõ tên file
   const handleNameChange = (val: string) => {
@@ -93,6 +174,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           full_name: fullName.trim() || boardCode.trim(),
           exported_at: exportedAt,
           subfolder: subfolder.trim() || undefined,
+          image_url: imageUrl,
+          file_size_bytes: fileSizeBytes,
           note: note.trim() || undefined,
         },
         initialItem?.id
@@ -105,48 +188,62 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
               {initialItem ? 'Chỉnh Sửa Dòng Xuất Khuôn Bảng' : 'Ghi Nhận Xuất Khuôn Bảng Mới'}
             </DialogTitle>
             <DialogDescription>
-              Lưu trữ thông tin xuất khuôn bảng vào cơ sở dữ liệu. Nhập tên file để hệ thống tự động bóc tách mã.
+              Lưu trữ thông tin xuất khuôn bảng và đính kèm ảnh đơn xuất đối chiếu.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-3">
+          <div className="space-y-4 py-3 text-xs">
             {/* Loại xuất */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Loại xuất xưởng</label>
+              <label className="text-xs font-medium text-foreground">Loại xuất</label>
               <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'board', label: 'Xuất Bảng', desc: 'Mỗi bảng 1 lần' },
-                  { id: 'mold', label: 'Xuất Khuôn', desc: 'Mỗi khuôn 1 lần' },
-                  { id: 'po', label: 'Xuất PO', desc: 'Theo từng đợt PO' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setType(item.id as ExportType)}
-                    className={`p-2 rounded-xl border text-left transition-all ${
-                      type === item.id
-                        ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary/40'
-                        : 'border-border/60 bg-secondary/40 text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    <div className="text-xs font-semibold">{item.label}</div>
-                    <div className="text-[10px] text-muted-foreground">{item.desc}</div>
-                  </button>
-                ))}
+                <Button
+                  type="button"
+                  variant={type === 'board' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setType('board')}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Xuất Bảng</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={type === 'mold' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setType('mold')}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <Box className="w-3.5 h-3.5" />
+                  <span>Xuất Khuôn</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={type === 'po' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setType('po')}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <Hash className="w-3.5 h-3.5" />
+                  <span>Xuất PO</span>
+                </Button>
               </div>
             </div>
 
-            {/* Tên file gốc */}
+            {/* Tên đầy đủ */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">
-                Tên file gốc (Tự động tách mã)
+              <label className="text-xs font-medium text-foreground flex items-center justify-between">
+                <span>Tên đầy đủ của file xuất</span>
+                <span className="text-[10px] text-muted-foreground font-normal">
+                  (Dán tên file để AI tự bóc tách mã)
+                </span>
               </label>
               <Input
                 value={fullName}
@@ -192,6 +289,91 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               </div>
             </div>
 
+            {/* ĐÍNH KÈM ẢNH ĐƠN XUẤT ĐỐI CHIẾU */}
+            <div className="space-y-1.5 p-3 rounded-xl border border-emerald-500/30 bg-emerald-950/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                  <FileImage className="w-4 h-4" />
+                  <span>Ảnh Đơn Xuất Kèm Theo (Phiếu Xuất Đối Chiếu)</span>
+                </div>
+                {imageUrl && fileSizeBytes && (
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {formatBytes(fileSizeBytes)} • WebP
+                  </span>
+                )}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleProcessOrderImage(e.target.files[0]);
+                }}
+              />
+
+              {isUploadingImage ? (
+                <div className="p-3 text-center rounded-lg bg-card/60 border border-border/50 text-xs flex items-center justify-center gap-2 text-muted-foreground">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  <span>Đang nén và tải ảnh đơn xuất...</span>
+                </div>
+              ) : imageUrl ? (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-card/80 border border-border/50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={imageUrl}
+                      alt="Đơn xuất"
+                      className="w-10 h-10 object-cover rounded-lg border border-border/60 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-foreground text-xs truncate">
+                        Đã đính kèm ảnh đơn xuất
+                      </div>
+                      <div className="text-[10px] text-emerald-400 font-mono">
+                        Nén WebP nét căng để đối chiếu
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Đổi ảnh
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setImageUrl(null);
+                        setFileSizeBytes(null);
+                      }}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                      title="Xóa ảnh đơn xuất"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 border border-dashed border-emerald-500/40 hover:border-emerald-500 rounded-lg text-center cursor-pointer bg-card/20 hover:bg-card/40 transition-all text-xs"
+                >
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <UploadCloud className="w-4 h-4 text-emerald-400" />
+                    <span>Bấm chọn ảnh hoặc ấn <kbd className="px-1 py-0.2 rounded bg-muted font-mono text-[10px]">Ctrl+V</kbd> để dán ảnh đơn xuất</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Ngày xuất */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">Ngày xuất xưởng</label>
@@ -208,7 +390,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-foreground">
-                  Thư mục con (anh tự đặt tên)
+                  Thư mục con (tự đặt tên)
                 </label>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   VD: bestway, chiều, ca 1...
@@ -252,7 +434,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingImage}
               className="text-xs"
             >
               Hủy
@@ -260,7 +442,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <Button
               type="submit"
               variant="gradient"
-              disabled={isSubmitting || !boardCode.trim()}
+              disabled={isSubmitting || isUploadingImage || !boardCode.trim()}
               className="text-xs"
             >
               {isSubmitting ? 'Đang lưu...' : initialItem ? 'Cập nhật' : 'Ghi nhận xuất'}

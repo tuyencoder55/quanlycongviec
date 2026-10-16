@@ -12,7 +12,8 @@ import {
   Trash2,
   Calendar,
   Maximize2,
-  Folder,
+  Eye,
+  Paperclip,
 } from 'lucide-react';
 
 interface FileItemCardProps {
@@ -21,6 +22,7 @@ interface FileItemCardProps {
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
   onViewImage?: (item: ExportItem) => void;
+  onAttachImage?: (item: ExportItem) => void;
 }
 
 export const FileItemCard: React.FC<FileItemCardProps> = ({
@@ -29,11 +31,13 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
   onEdit,
   onDelete,
   onViewImage,
+  onAttachImage,
 }) => {
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const isImage = item.type === 'image' || Boolean(item.image_url);
+  const hasImage = Boolean(item.image_url);
+  const isImageOnly = item.type === 'image';
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,7 +47,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
   };
 
   const handleCardClick = () => {
-    if (isImage && onViewImage) {
+    if (hasImage && onViewImage) {
       onViewImage(item);
     }
   };
@@ -52,19 +56,19 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
     <div
       onClick={handleCardClick}
       className={`group relative flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card/30 hover:bg-card hover:border-border transition-all duration-200 ${
-        isImage ? 'cursor-pointer hover:border-emerald-500/40' : ''
+        hasImage ? 'cursor-pointer hover:border-emerald-500/40 hover:shadow-xs' : ''
       }`}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* ICON HOẶC THUMBNAIL ẢNH */}
-        {isImage && item.image_url && !imageError ? (
+        {/* ICON HOẶC THUMBNAIL ĐƠN XUẤT */}
+        {hasImage && item.image_url && !imageError ? (
           <div
             onClick={(e) => {
               e.stopPropagation();
               onViewImage?.(item);
             }}
-            className="relative w-11 h-11 rounded-xl overflow-hidden border border-emerald-500/30 bg-emerald-950/20 shrink-0 shadow-xs group-hover:scale-105 transition-transform cursor-pointer"
-            title="Click để phóng to ảnh xem chi tiết"
+            className="relative w-12 h-12 rounded-xl overflow-hidden border border-emerald-500/40 bg-emerald-950/20 shrink-0 shadow-xs group-hover:scale-105 transition-transform cursor-pointer"
+            title="Click để phóng to xem đơn xuất đối chiếu"
           >
             <img
               src={item.image_url}
@@ -73,19 +77,19 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Maximize2 className="w-3.5 h-3.5 text-white" />
+              <Eye className="w-4 h-4 text-white" />
             </div>
           </div>
-        ) : isImage ? (
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center text-emerald-400 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+        ) : isImageOnly ? (
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center text-emerald-400 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
             <FileImage className="w-5 h-5 text-emerald-400" />
             <span className="text-[8px] font-bold font-mono tracking-tighter text-emerald-400 mt-[-2px]">
-              IMG
+              ĐƠN
             </span>
           </div>
         ) : (
           /* Icon file PDF chuyên nghiệp (đỏ Acrobat) */
-          <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex flex-col items-center justify-center text-rose-500 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex flex-col items-center justify-center text-rose-500 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
             <FileText className="w-5 h-5 text-rose-500" />
             <span className="text-[8px] font-bold font-mono tracking-tighter text-rose-400 mt-[-2px]">
               PDF
@@ -93,7 +97,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
           </div>
         )}
 
-        {/* Thông tin file */}
+        {/* Thông tin file / đơn xuất */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
@@ -105,7 +109,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             <button
               onClick={handleCopy}
               className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-accent transition-colors"
-              title="Sao chép tên file"
+              title="Sao chép tên"
             >
               {copied ? (
                 <Check className="w-3 h-3 text-emerald-400" />
@@ -115,21 +119,15 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             </button>
           </div>
 
-          {/* Chip metadata: Mã Bảng, Khuôn, PO, Dung lượng */}
+          {/* Chip metadata: Mã Bảng, Khuôn, PO, Trạng thái đơn xuất */}
           <div className="flex items-center gap-1.5 flex-wrap mt-1">
-            {isImage ? (
+            {isImageOnly ? (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                Hình ảnh WebP
+                Đơn xuất xưởng
               </span>
             ) : (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 {item.board_code}
-              </span>
-            )}
-
-            {isImage && item.file_size_bytes && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-secondary text-foreground border border-border/50">
-                {formatBytes(item.file_size_bytes)}
               </span>
             )}
 
@@ -142,6 +140,12 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             {item.ref_value && (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 {item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value}
+              </span>
+            )}
+
+            {item.file_size_bytes && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-secondary text-foreground border border-border/50">
+                {formatBytes(item.file_size_bytes)}
               </span>
             )}
 
@@ -159,23 +163,42 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
         </div>
       </div>
 
-      {/* Hành động sửa/xóa cho Admin */}
-      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-        {isImage && onViewImage && (
+      {/* NÚT THAO TÁC XEM ĐƠN XUẤT VÀ QUẢN LÝ */}
+      <div className="flex items-center gap-1.5 ml-2 shrink-0">
+        {/* NÚT BẤM XEM ĐƠN XUẤT NỔI BẬT NẾU CÓ ẢNH */}
+        {hasImage && onViewImage && (
           <Button
-            variant="ghost"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onViewImage(item);
             }}
-            className="h-7 w-7 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg"
-            title="Xem phóng to ảnh"
+            className="h-7 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 transition-all"
+            title="Bấm để xem ảnh đơn xuất bảng/khuôn đối chiếu"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5" />
+            <span className="font-semibold">Xem đơn xuất</span>
           </Button>
         )}
 
+        {/* Nút đính kèm ảnh đơn xuất nếu chưa có */}
+        {!hasImage && isAdmin && onAttachImage && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAttachImage(item);
+            }}
+            className="h-7 px-2 rounded-lg text-[11px] text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 flex items-center gap-1"
+            title="Đính kèm ảnh chụp đơn xuất bảng/khuôn vào dòng này"
+          >
+            <Paperclip className="w-3 h-3" />
+            <span className="hidden sm:inline">Kèm đơn</span>
+          </Button>
+        )}
+
+        {/* Hành động sửa/xóa cho Admin */}
         {isAdmin && onEdit && (
           <Button
             variant="ghost"

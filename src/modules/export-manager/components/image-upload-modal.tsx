@@ -221,10 +221,10 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
             <FileImage className="w-5 h-5" />
           </div>
           <DialogTitle className="text-base font-semibold">
-            Thêm Hình Ảnh Vào Thư Mục
+            Tải Lên Đơn Xuất Bảng / Khuôn (Đối Chiếu)
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Hệ thống tự động scale kích thước và nén WebP giữ nét căng, tiết kiệm tới 95% dung lượng lưu trữ Supabase.
+            Ảnh chụp phiếu giao nhận, đơn xuất xưởng dùng để đối chiếu sau này. Hệ thống tự động nén WebP giữ chữ viết sắc nét và tiết kiệm 95% bộ nhớ.
           </DialogDescription>
         </DialogHeader>
 

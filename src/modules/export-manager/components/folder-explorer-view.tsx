@@ -764,6 +764,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
+                      onAttachImage={(item) => onEdit?.(item)}
                     />
                   ))}
                 </div>
@@ -796,6 +797,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
+                      onAttachImage={(item) => onEdit?.(item)}
                     />
                   ))}
                 </div>

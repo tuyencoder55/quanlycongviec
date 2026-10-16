@@ -10,8 +10,11 @@ export interface ExportFormData {
   ref_value?: string;
   full_name: string;
   exported_at: string;
+  subfolder?: string;
   note?: string;
 }
+
+export type ExportViewMode = 'folder' | 'table';
 
 export type ExportTypeFilter = 'all' | 'board' | 'mold' | 'po';
 export type ExportDateFilter = 'all' | 'today' | '7days' | 'month';

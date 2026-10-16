@@ -19,6 +19,8 @@ interface ExportDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   initialItem?: ExportItem | null;
+  defaultSubfolder?: string;
+  defaultDate?: string;
   onSave: (formData: ExportFormData, id?: string) => Promise<void>;
   isAdmin: boolean;
 }
@@ -27,6 +29,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   isOpen,
   onOpenChange,
   initialItem,
+  defaultSubfolder,
+  defaultDate,
   onSave,
   isAdmin,
 }) => {
@@ -36,6 +40,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const [moldCode, setMoldCode] = useState('');
   const [refValue, setRefValue] = useState('');
   const [exportedAt, setExportedAt] = useState(new Date().toISOString().split('T')[0]);
+  const [subfolder, setSubfolder] = useState('');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,6 +52,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setMoldCode(initialItem.mold_code || '');
       setRefValue(initialItem.ref_value || '');
       setExportedAt(initialItem.exported_at || new Date().toISOString().split('T')[0]);
+      setSubfolder(initialItem.subfolder || '');
       setNote(initialItem.note || '');
     } else {
       setType('board');
@@ -54,10 +60,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setBoardCode('');
       setMoldCode('');
       setRefValue('');
-      setExportedAt(new Date().toISOString().split('T')[0]);
+      setExportedAt(defaultDate || new Date().toISOString().split('T')[0]);
+      setSubfolder(defaultSubfolder || '');
       setNote('');
     }
-  }, [initialItem, isOpen]);
+  }, [initialItem, isOpen, defaultSubfolder, defaultDate]);
 
   // Phân tích tự động khi gõ tên file
   const handleNameChange = (val: string) => {
@@ -85,6 +92,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           ref_value: refValue.trim() || undefined,
           full_name: fullName.trim() || boardCode.trim(),
           exported_at: exportedAt,
+          subfolder: subfolder.trim() || undefined,
           note: note.trim() || undefined,
         },
         initialItem?.id
@@ -194,6 +202,37 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                 required
                 className="font-mono text-xs"
               />
+            </div>
+
+            {/* Thư mục con (tùy chọn) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-foreground">
+                  Thư mục con (anh tự đặt tên)
+                </label>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  VD: bestway, chiều, ca 1...
+                </span>
+              </div>
+              <Input
+                value={subfolder}
+                onChange={(e) => setSubfolder(e.target.value)}
+                placeholder="Để trống nếu nằm ở thư mục gốc của ngày"
+                className="text-xs font-mono"
+              />
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
+                <span className="text-[10px]">Gợi ý nhanh:</span>
+                {['bestway', 'chiều', 'sáng', 'gấp'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSubfolder(tag)}
+                    className="px-2 py-0.5 rounded-md bg-secondary/80 hover:bg-secondary text-[10px] font-mono border border-border/50 text-foreground transition-all"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Ghi chú */}

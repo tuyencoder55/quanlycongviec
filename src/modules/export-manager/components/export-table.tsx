@@ -358,7 +358,14 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                       className="flex items-center justify-between gap-2 cursor-pointer hover:text-foreground group/name"
                       title="Nhấp để copy toàn bộ tên file"
                     >
-                      <span className="truncate">{item.full_name}</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {item.subfolder && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                            📁 {item.subfolder}
+                          </span>
+                        )}
+                        <span className="truncate">{item.full_name}</span>
+                      </div>
                       <button
                         type="button"
                         className="shrink-0 p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"

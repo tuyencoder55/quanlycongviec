@@ -48,6 +48,7 @@ export interface ExportRow {
   ref_value: string | null;
   full_name: string;
   exported_at: string;
+  subfolder?: string | null;
   note: string | null;
   created_by: string | null;
   created_at: string;
@@ -135,6 +136,7 @@ export interface Database {
           ref_value?: string | null;
           full_name: string;
           exported_at?: string;
+          subfolder?: string | null;
           note?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -148,6 +150,7 @@ export interface Database {
           ref_value?: string | null;
           full_name?: string;
           exported_at?: string;
+          subfolder?: string | null;
           note?: string | null;
         };
       };

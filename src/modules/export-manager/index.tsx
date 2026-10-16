@@ -3,7 +3,14 @@ import { useExports } from './hooks/use-exports';
 import { useAuth } from '../../hooks/use-auth';
 import { ExportTable } from './components/export-table';
 import { ExportDialog } from './components/export-dialog';
-import type { ExportItem, ExportFormData, ExportTypeFilter, ExportDateFilter } from './types';
+import { FolderExplorerView } from './components/folder-explorer-view';
+import type {
+  ExportItem,
+  ExportFormData,
+  ExportTypeFilter,
+  ExportDateFilter,
+  ExportViewMode,
+} from './types';
 import { Button } from '../../components/ui/button';
 import {
   Search,
@@ -15,6 +22,8 @@ import {
   Hash,
   Database,
   Sparkles,
+  Folder,
+  Table,
 } from 'lucide-react';
 import { AiScannerModal } from './components/ai-scanner-modal';
 
@@ -40,6 +49,26 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ExportItem | null>(null);
+  const [defaultFolderData, setDefaultFolderData] = useState<{
+    subfolder?: string;
+    date?: string;
+  }>({});
+
+  // Chế độ xem: Cây thư mục (folder) hoặc Bảng phẳng (table)
+  const [viewMode, setViewMode] = useState<ExportViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nexus_export_view_mode');
+      if (saved === 'folder' || saved === 'table') return saved;
+    }
+    return 'folder';
+  });
+
+  const handleViewModeChange = (mode: ExportViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nexus_export_view_mode', mode);
+    }
+  };
 
   // Lọc dữ liệu theo từ khóa và bộ lọc loại, ngày
   const query = (externalSearch || searchTerm).trim().toLowerCase();
@@ -83,6 +112,14 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   const handleOpenAdd = () => {
     if (!isAdmin) return;
     setSelectedItem(null);
+    setDefaultFolderData({});
+    setIsDialogOpen(true);
+  };
+
+  const handleNewExportInFolder = (subfolder?: string, date?: string) => {
+    if (!isAdmin) return;
+    setSelectedItem(null);
+    setDefaultFolderData({ subfolder, date });
     setIsDialogOpen(true);
   };
 
@@ -114,6 +151,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
       'Mã Bảng',
       'Mã Khuôn',
       'Số PO/Tham chiếu',
+      'Thư mục con',
       'Ngày xuất Bảng',
       'Ngày xuất Khuôn',
       'Ngày xuất PO',
@@ -166,6 +204,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         item.board_code,
         item.mold_code || '',
         item.ref_value ? (item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value) : '',
+        item.subfolder || '',
         boardDate,
         moldDate,
         poDate,
@@ -322,22 +361,62 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
               </button>
             ))}
           </div>
+
+          {/* Chuyển đổi Dạng Cây Thư Mục / Dạng Bảng */}
+          <div className="flex items-center gap-0.5 bg-secondary/70 p-0.5 rounded-lg border border-border/60 text-xs shrink-0">
+            <button
+              onClick={() => handleViewModeChange('folder')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === 'folder'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Xem theo Cây thư mục (Năm > Tháng > Ngày > Thư mục con)"
+            >
+              <Folder className="w-3.5 h-3.5 text-amber-400" />
+              <span className="font-medium">Thư Mục</span>
+            </button>
+            <button
+              onClick={() => handleViewModeChange('table')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                viewMode === 'table'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title="Xem theo Bảng phẳng tra cứu"
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span className="font-medium">Bảng</span>
+            </button>
+          </div>
         </div>
 
-        <div className="text-[11px] text-muted-foreground font-mono px-2">
+        <div className="text-[11px] text-muted-foreground font-mono px-2 shrink-0">
           {filteredList.length} kết quả
         </div>
       </div>
 
-      {/* Bảng dữ liệu dạng Google Sheets phẳng tối giản */}
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
-        <ExportTable
-          items={filteredList}
-          allExports={exportsList}
-          isAdmin={isAdmin}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+      {/* VÙNG HIỂN THỊ CHÍNH: DẠNG CÂY THƯ MỤC HOẶC BẢNG GOOGLE SHEETS */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {viewMode === 'folder' ? (
+          <FolderExplorerView
+            items={filteredList}
+            isAdmin={isAdmin}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onNewExportInFolder={handleNewExportInFolder}
+          />
+        ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
+            <ExportTable
+              items={filteredList}
+              allExports={exportsList}
+              isAdmin={isAdmin}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
+        )}
       </div>
 
       {/* Hộp thoại thêm / sửa dòng xuất */}
@@ -345,6 +424,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         initialItem={selectedItem}
+        defaultSubfolder={defaultFolderData.subfolder}
+        defaultDate={defaultFolderData.date}
         onSave={handleSave}
         isAdmin={isAdmin}
       />

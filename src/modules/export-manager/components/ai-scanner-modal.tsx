@@ -19,6 +19,7 @@ import {
   Check,
   Key,
   ExternalLink,
+  Folder,
 } from 'lucide-react';
 import {
   scanScreenshotWithGemini,
@@ -57,6 +58,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   const [scanError, setScanError] = useState<string | null>(null);
   const [matchedItems, setMatchedItems] = useState<MatchedScannedItem[]>([]);
   const [exportDate, setExportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [subfolder, setSubfolder] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoCompleteTasks, setAutoCompleteTasks] = useState(true);
 
@@ -198,7 +200,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
     setIsSubmitting(true);
     try {
       for (const item of selected) {
-        // 1. Tạo dòng xuất tương ứng
+          // 1. Tạo dòng xuất tương ứng
         if (item.actionSuggest === 'export_po_only' || item.ref_value) {
           // Bảng đã có trước đó, chỉ xuất thêm PO
           await createExport({
@@ -209,6 +211,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
             ref_value: item.ref_value,
             full_name: item.full_name,
             exported_at: exportDate,
+            subfolder: subfolder.trim() || undefined,
             note: item.actionLabel,
           });
         } else {
@@ -219,6 +222,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
             mold_code: item.mold_code,
             full_name: item.full_name,
             exported_at: exportDate,
+            subfolder: subfolder.trim() || undefined,
             note: 'Xuất bảng từ AI Scanner',
           });
 
@@ -230,6 +234,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
               mold_code: item.mold_code,
               full_name: item.full_name,
               exported_at: exportDate,
+              subfolder: subfolder.trim() || undefined,
               note: 'Xuất khuôn từ AI Scanner',
             });
           }
@@ -266,6 +271,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
     setRawImageData(null);
     setMatchedItems([]);
     setScanError(null);
+    setSubfolder('');
   };
 
   const selectedCount = matchedItems.filter((i) => i.selectedToExport).length;
@@ -600,6 +606,18 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                   value={exportDate}
                   onChange={(e) => setExportDate(e.target.value)}
                   className="h-7 bg-background border border-input rounded-md px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 font-mono text-muted-foreground">
+                <Folder className="w-3.5 h-3.5 text-amber-400" />
+                <span>Thư mục:</span>
+                <input
+                  type="text"
+                  value={subfolder}
+                  onChange={(e) => setSubfolder(e.target.value)}
+                  placeholder="bestway, chiều..."
+                  className="h-7 w-32 bg-background border border-input rounded-md px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
               </div>
 

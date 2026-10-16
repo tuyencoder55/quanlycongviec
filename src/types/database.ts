@@ -3,7 +3,7 @@
 export type UserRole = 'admin' | 'viewer';
 export type PriorityLevel = 'low' | 'medium' | 'high' | 'urgent';
 export type RefKind = 'po' | 'date';
-export type ExportType = 'board' | 'mold' | 'po';
+export type ExportType = 'board' | 'mold' | 'po' | 'image';
 
 export interface Profile {
   id: string;
@@ -49,6 +49,8 @@ export interface ExportRow {
   full_name: string;
   exported_at: string;
   subfolder?: string | null;
+  image_url?: string | null;
+  file_size_bytes?: number | null;
   note: string | null;
   created_by: string | null;
   created_at: string;
@@ -137,6 +139,8 @@ export interface Database {
           full_name: string;
           exported_at?: string;
           subfolder?: string | null;
+          image_url?: string | null;
+          file_size_bytes?: number | null;
           note?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -151,6 +155,8 @@ export interface Database {
           full_name?: string;
           exported_at?: string;
           subfolder?: string | null;
+          image_url?: string | null;
+          file_size_bytes?: number | null;
           note?: string | null;
         };
       };

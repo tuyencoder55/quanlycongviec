@@ -392,7 +392,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         </div>
 
         <div className="text-[11px] text-muted-foreground font-mono px-2 shrink-0">
-          {filteredList.length} kết quả
+          {viewMode === 'table'
+            ? `${filteredList.filter((i) => i.type !== 'image').length} kết quả`
+            : `${filteredList.length} kết quả`}
         </div>
       </div>
 
@@ -409,8 +411,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
             <ExportTable
-              items={filteredList}
-              allExports={exportsList}
+              items={filteredList.filter((i) => i.type !== 'image')}
+              allExports={exportsList.filter((i) => i.type !== 'image')}
               isAdmin={isAdmin}
               onEdit={handleEdit}
               onDelete={handleDelete}

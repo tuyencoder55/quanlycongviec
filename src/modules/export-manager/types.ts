@@ -1,4 +1,5 @@
 import type { ExportRow, ExportType, RefKind } from '../../types/database';
+export type { ExportType, RefKind };
 
 export interface ExportItem extends ExportRow {}
 
@@ -11,6 +12,8 @@ export interface ExportFormData {
   full_name: string;
   exported_at: string;
   subfolder?: string;
+  image_url?: string | null;
+  file_size_bytes?: number | null;
   note?: string;
 }
 

@@ -44,7 +44,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   const [sortField, setSortField] = useState<SortField>('board_code');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-  const pool = allExports.length > 0 ? allExports : items;
+  // Bảng tra cứu chỉ hiển thị hồ sơ xuất xưởng (Bảng, Khuôn, PO). File ảnh chỉ hiển thị ở dạng Cây Thư Mục
+  const validItems = items.filter((item) => item.type !== 'image');
+  const pool = (allExports.length > 0 ? allExports : validItems).filter((e) => e.type !== 'image');
 
   // Tra cứu chéo ngày xuất riêng biệt cho từng thành phần: Bảng, Khuôn, PO
   const getExportDates = (item: ExportItem) => {
@@ -109,7 +111,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   };
 
   // Sắp xếp dữ liệu theo cột được chọn
-  const sortedItems = [...items].sort((a, b) => {
+  const sortedItems = [...validItems].sort((a, b) => {
     const datesA = getExportDates(a);
     const datesB = getExportDates(b);
 

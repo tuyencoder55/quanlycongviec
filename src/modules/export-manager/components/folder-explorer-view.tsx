@@ -20,7 +20,6 @@ import {
   HardDrive,
   Plus,
   RefreshCw,
-  Sparkles,
 } from 'lucide-react';
 
 interface FolderExplorerViewProps {
@@ -49,13 +48,52 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     return ['2026', '2026-10'];
   });
 
-  // Modal tạo thư mục con mới
+  // Modal tạo thư mục mới
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [customDays, setCustomDays] = useState<string[]>([]);
-  const [customFolders, setCustomFolders] = useState<string[]>([]);
 
-  // Menu ngữ cảnh chuột phải (Context Menu phong cách Windows 11 Desktop)
+  // Lưu trữ các thư mục người dùng tự tạo trên trình duyệt (giữ lại kể cả khi F5)
+  const [customYears, setCustomYears] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nexus_custom_years');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const [customMonths, setCustomMonths] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nexus_custom_months');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const [customDays, setCustomDays] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nexus_custom_days');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const [customFolders, setCustomFolders] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('nexus_custom_folders');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  // Menu ngữ cảnh chuột phải (Context Menu phong cách Windows Desktop)
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -79,7 +117,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     };
   }, []);
 
-  // Bắt sự kiện chuột phải trên vùng trống Explorer
+  // Bắt sự kiện chuột phải trên toàn bộ vùng Explorer
   const handleContainerContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -98,20 +136,24 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   const currentDay = currentPath[2];
   const currentSubfolder = currentPath[3];
 
-  // Danh sách các năm có trong dữ liệu
+  // Danh sách các năm có trong dữ liệu + năm người dùng tự tạo
   const availableYears = useMemo(() => {
     const set = new Set<string>();
+    customYears.forEach((y) => set.add(y));
     items.forEach((item) => {
       if (item.exported_at) set.add(item.exported_at.slice(0, 4));
     });
     if (set.size === 0) set.add('2026');
     return Array.from(set).sort().reverse();
-  }, [items]);
+  }, [items, customYears]);
 
-  // Danh sách các tháng trong năm được chọn
+  // Danh sách các tháng trong năm được chọn + tháng tự tạo
   const availableMonths = useMemo(() => {
     if (!currentYear) return [];
     const set = new Set<string>();
+    customMonths.forEach((m) => {
+      if (m.startsWith(currentYear)) set.add(m);
+    });
     items.forEach((item) => {
       if (item.exported_at && item.exported_at.startsWith(currentYear)) {
         set.add(item.exported_at.slice(0, 7)); // YYYY-MM
@@ -119,19 +161,22 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     });
     if (set.size === 0) set.add(`${currentYear}-10`);
     return Array.from(set).sort().reverse();
-  }, [items, currentYear]);
+  }, [items, currentYear, customMonths]);
 
-  // Danh sách các ngày trong tháng được chọn (hiển thị định dạng MM-DD như trong ảnh của anh)
+  // Danh sách các ngày trong tháng được chọn + ngày tự tạo
   const availableDays = useMemo(() => {
     if (!currentMonth) return [];
     const map = new Map<string, number>();
 
-    // Thêm các ngày người dùng tự tạo
-    customDays.forEach((d) => map.set(d, 0));
+    // Thêm các ngày người dùng tự tạo trong tháng này
+    customDays.forEach((d) => {
+      const tag = d.includes('-') && d.length === 5 ? d : d.slice(5, 10);
+      if (!map.has(tag)) map.set(tag, 0);
+    });
 
     items.forEach((item) => {
       if (item.exported_at && item.exported_at.startsWith(currentMonth)) {
-        const dayTag = item.exported_at.slice(5, 10); // MM-DD (ví dụ 10-15)
+        const dayTag = item.exported_at.slice(5, 10); // MM-DD
         map.set(dayTag, (map.get(dayTag) || 0) + 1);
       }
     });
@@ -196,21 +241,55 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     }
   };
 
-  // Tạo thư mục mới (tùy theo đang ở cấp nào: cấp tháng tạo ngày mới, cấp ngày tạo thư mục con)
+  // Tạo thư mục mới tại BẤT KỲ CẤP NÀO (Gốc, Năm, Tháng, Ngày, Thư mục con)
   const handleCreateFolder = () => {
     const name = newFolderName.trim();
     if (!name) return;
 
-    if (level === 2 && currentMonth) {
-      // Đang ở cấp tháng -> tạo folder Ngày mới (VD: 10-16)
-      const formattedDay = name.includes('-') ? name : `${currentMonth.slice(5, 7)}-${name.padStart(2, '0')}`;
-      setCustomDays((prev) => (prev.includes(formattedDay) ? prev : [...prev, formattedDay]));
+    if (level === 0) {
+      // 1. Ở Gốc -> Tạo thư mục Năm mới (VD: 2027)
+      const updated = Array.from(new Set([...customYears, name]));
+      setCustomYears(updated);
+      try {
+        localStorage.setItem('nexus_custom_years', JSON.stringify(updated));
+      } catch {}
+      setIsNewFolderOpen(false);
+      setNewFolderName('');
+      setCurrentPath([name]);
+    } else if (level === 1 && currentYear) {
+      // 2. Ở Năm -> Tạo thư mục Tháng mới (VD: 2026-11 hoặc 11)
+      const formattedMonth = name.startsWith(currentYear)
+        ? name
+        : `${currentYear}-${name.replace(/^\D+/, '').padStart(2, '0')}`;
+      const updated = Array.from(new Set([...customMonths, formattedMonth]));
+      setCustomMonths(updated);
+      try {
+        localStorage.setItem('nexus_custom_months', JSON.stringify(updated));
+      } catch {}
+      setIsNewFolderOpen(false);
+      setNewFolderName('');
+      setCurrentPath([currentYear, formattedMonth]);
+    } else if (level === 2 && currentMonth) {
+      // 3. Ở Tháng -> Tạo thư mục Ngày mới (VD: 10-16 hoặc 16)
+      const monthPrefix = currentMonth.slice(5, 7);
+      const formattedDay = name.includes('-')
+        ? name
+        : `${monthPrefix}-${name.replace(/^\D+/, '').padStart(2, '0')}`;
+      const updated = Array.from(new Set([...customDays, formattedDay]));
+      setCustomDays(updated);
+      try {
+        localStorage.setItem('nexus_custom_days', JSON.stringify(updated));
+      } catch {}
       setIsNewFolderOpen(false);
       setNewFolderName('');
       setCurrentPath([...currentPath, formattedDay]);
     } else {
-      // Đang ở cấp ngày -> tạo thư mục con (VD: bestway, chiều...)
-      setCustomFolders((prev) => (prev.includes(name) ? prev : [...prev, name]));
+      // 4. Ở Ngày hoặc Thư mục con -> Tạo thư mục con (VD: bestway, chiều...)
+      const updated = Array.from(new Set([...customFolders, name]));
+      setCustomFolders(updated);
+      try {
+        localStorage.setItem('nexus_custom_folders', JSON.stringify(updated));
+      } catch {}
       setIsNewFolderOpen(false);
       setNewFolderName('');
       if (currentDay) {
@@ -219,7 +298,47 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     }
   };
 
-  const isCreatingDay = level === 2;
+  // Thông tin tiêu đề và gợi ý popup tạo folder theo cấp hiện tại
+  const modalInfo = useMemo(() => {
+    if (level === 0) {
+      return {
+        title: 'Tạo Thư Mục Năm Mới',
+        desc: 'Tạo thư mục năm mới tại thư mục Gốc.',
+        label: 'Tên năm (VD: 2027, 2025):',
+        placeholder: '2027',
+        suggestions: ['2027', '2026', '2025'],
+        btnText: 'Tạo Thư Mục Năm',
+      };
+    }
+    if (level === 1) {
+      return {
+        title: `Tạo Thư Mục Tháng Mới (${currentYear})`,
+        desc: `Tạo thư mục tháng mới trong năm ${currentYear}.`,
+        label: 'Tên tháng (YYYY-MM):',
+        placeholder: `VD: ${currentYear}-11, ${currentYear}-12...`,
+        suggestions: [`${currentYear}-11`, `${currentYear}-12`, `${currentYear}-09`],
+        btnText: 'Tạo Thư Mục Tháng',
+      };
+    }
+    if (level === 2) {
+      return {
+        title: `Tạo Ngày Xuất Mới (${currentMonth})`,
+        desc: `Tạo thư mục ngày xuất trong tháng ${currentMonth}. Định dạng MM-DD.`,
+        label: 'Tên ngày (MM-DD):',
+        placeholder: 'VD: 10-16, 10-17...',
+        suggestions: ['10-16', '10-17', '10-18', '10-19'],
+        btnText: 'Tạo Thư Mục Ngày',
+      };
+    }
+    return {
+      title: `Tạo Thư Mục Con (Ngày ${currentDay})`,
+      desc: `Thư mục con sẽ nằm trong ngày ${currentDay} (${currentMonth}). Anh có thể tự đặt tên tùy ý.`,
+      label: 'Tên thư mục con:',
+      placeholder: 'VD: bestway, chiều, sáng, ca 1...',
+      suggestions: ['bestway', 'chiều', 'sáng', 'gấp', 'khách A'],
+      btnText: 'Tạo Thư Mục Con',
+    };
+  }, [level, currentYear, currentMonth, currentDay]);
 
   return (
     <div
@@ -245,7 +364,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground select-none flex-nowrap">
             <button
               onClick={() => handleNavigateToBreadcrumb(-1)}
-              className="flex items-center gap-1 hover:text-foreground px-1.5 py-0.5 rounded hover:bg-secondary transition-colors"
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
+                currentPath.length === 0
+                  ? 'text-foreground font-semibold bg-accent/60'
+                  : 'hover:text-foreground hover:bg-secondary'
+              }`}
             >
               <HardDrive className="w-3.5 h-3.5 text-primary" />
               <span>Gốc</span>
@@ -269,9 +392,9 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </div>
         </div>
 
-        {/* Nút thao tác nhanh bên phải */}
+        {/* Nút thao tác nhanh bên phải: Luôn cho phép tạo thư mục mới ở MỌI CẤP */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {isAdmin && (level === 2 || level >= 3) && (
+          {isAdmin && (
             <Button
               variant="outline"
               size="sm"
@@ -280,9 +403,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               title="Tạo thư mục mới (hoặc nhấp chuột phải vào khoảng trống)"
             >
               <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">
-                {isCreatingDay ? 'Tạo ngày mới' : 'Thư mục mới'}
-              </span>
+              <span className="hidden sm:inline">Thư mục mới</span>
             </Button>
           )}
 
@@ -307,13 +428,37 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         onContextMenu={handleContainerContextMenu}
         className="flex-1 min-h-0 overflow-y-auto p-3 rounded-xl border border-border/50 bg-card/20 space-y-4"
       >
-        {/* CẤP 0: DANH SÁCH CÁC NĂM */}
+        {/* CẤP 0: DANH SÁCH CÁC NĂM (GỐC) */}
         {level === 0 && (
           <div className="space-y-2">
-            <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider">
-              Chọn Năm
+            <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
+              <span>Chọn Năm</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                (Chuột phải vào vùng trống để tạo thư mục mới)
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              {/* Thẻ tạo nhanh thư mục Năm mới nét đứt */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsNewFolderOpen(true)}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 transition-all duration-200 cursor-pointer select-none group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                    <FolderPlus className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
+                      + Tạo thư mục mới
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono">
+                      VD: 2027, 2025...
+                    </div>
+                  </div>
+                </button>
+              )}
+
               {availableYears.map((year) => (
                 <FolderItemCard
                   key={year}
@@ -330,10 +475,34 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         {/* CẤP 1: DANH SÁCH CÁC THÁNG TRONG NĂM */}
         {level === 1 && (
           <div className="space-y-2">
-            <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider">
-              Các Tháng Trong Năm {currentYear}
+            <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
+              <span>Các Tháng Trong Năm {currentYear}</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                (Chuột phải vào vùng trống để tạo thư mục mới)
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              {/* Thẻ tạo nhanh thư mục Tháng mới nét đứt */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsNewFolderOpen(true)}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 transition-all duration-200 cursor-pointer select-none group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                    <FolderPlus className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
+                      + Tạo tháng mới
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono">
+                      VD: {currentYear}-11, {currentYear}-12...
+                    </div>
+                  </div>
+                </button>
+              )}
+
               {availableMonths.map((month) => (
                 <FolderItemCard
                   key={month}
@@ -372,7 +541,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       + Tạo ngày mới
                     </div>
                     <div className="text-[10px] text-muted-foreground font-mono">
-                      Chuột phải hoặc bấm vào đây
+                      VD: 10-16, 10-17...
                     </div>
                   </div>
                 </button>
@@ -415,7 +584,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                     </div>
                     <div className="text-left">
                       <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
-                        + Tạo thư mục mới
+                        + Tạo thư mục con
                       </div>
                       <div className="text-[10px] text-muted-foreground font-mono">
                         bestway, chiều, ca 1...
@@ -522,7 +691,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-foreground hover:bg-accent text-xs font-medium transition-colors text-left"
             >
               <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isCreatingDay ? 'Tạo ngày xuất mới...' : 'Thư mục mới...'}</span>
+              <span>Thư mục mới...</span>
             </button>
           )}
 
@@ -545,7 +714,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           <button
             onClick={() => {
               setContextMenu((prev) => ({ ...prev, isOpen: false }));
-              // Chuyển nhanh lên cấp cha
               handleNavigateUp();
             }}
             disabled={currentPath.length === 0}
@@ -557,7 +725,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         </div>
       )}
 
-      {/* DIALOG TẠO THƯ MỤC CON HOẶC NGÀY MỚI */}
+      {/* DIALOG TẠO THƯ MỤC LINH HOẠT TẠI MỌI CẤP */}
       <Dialog open={isNewFolderOpen} onOpenChange={setIsNewFolderOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -565,24 +733,22 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               <FolderPlus className="w-5 h-5" />
             </div>
             <DialogTitle className="text-base font-semibold">
-              {isCreatingDay ? 'Tạo Ngày Xuất Mới' : 'Tạo Thư Mục Mới'}
+              {modalInfo.title}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {isCreatingDay
-                ? `Tạo thư mục ngày xuất trong tháng ${currentMonth}. Định dạng MM-DD (ví dụ: 10-16).`
-                : `Thư mục con sẽ nằm trong ngày ${currentDay} (${currentMonth}). Anh có thể tự đặt tên tùy ý.`}
+              {modalInfo.desc}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="space-y-1.5">
               <label className="font-medium text-foreground text-xs">
-                {isCreatingDay ? 'Tên ngày (MM-DD):' : 'Tên thư mục con:'}
+                {modalInfo.label}
               </label>
               <Input
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder={isCreatingDay ? 'VD: 10-16' : 'VD: bestway, chiều, sáng, ca 1...'}
+                placeholder={modalInfo.placeholder}
                 className="font-mono text-xs"
                 autoFocus
                 onKeyDown={(e) => {
@@ -596,10 +762,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
             <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-muted-foreground">
               <span>Gợi ý:</span>
-              {(isCreatingDay
-                ? ['10-16', '10-17', '10-18', '10-19']
-                : ['bestway', 'chiều', 'sáng', 'gấp', 'khách A']
-              ).map((tag) => (
+              {modalInfo.suggestions.map((tag) => (
                 <button
                   key={tag}
                   type="button"
@@ -629,7 +792,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               disabled={!newFolderName.trim()}
               className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
             >
-              {isCreatingDay ? 'Tạo Ngày' : 'Tạo Thư Mục'}
+              {modalInfo.btnText}
             </Button>
           </DialogFooter>
         </DialogContent>

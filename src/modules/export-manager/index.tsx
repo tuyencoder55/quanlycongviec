@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useExports } from './hooks/use-exports';
 import { useAuth } from '../../hooks/use-auth';
 import { ExportTable } from './components/export-table';
@@ -68,6 +68,44 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
     if (typeof window !== 'undefined') {
       localStorage.setItem('nexus_export_view_mode', mode);
     }
+  };
+
+  // Điều hướng nhanh từ Bảng sang Cây thư mục (Open path / Reveal in folder)
+  const [folderNavigation, setFolderNavigation] = useState<{
+    path: string[];
+    highlightItemId: string;
+    trigger: number;
+  } | null>(null);
+
+  // Tự động tắt viền sáng highlight sau 4 giây
+  useEffect(() => {
+    if (folderNavigation?.highlightItemId) {
+      const timer = setTimeout(() => {
+        setFolderNavigation((prev) =>
+          prev ? { ...prev, highlightItemId: '' } : null
+        );
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [folderNavigation?.trigger]);
+
+  const handleRevealInFolder = (item: ExportItem) => {
+    const dateStr = item.exported_at || new Date().toISOString().split('T')[0];
+    const year = dateStr.slice(0, 4);
+    const month = dateStr.slice(0, 7);
+    const day = dateStr.slice(5, 10);
+
+    const path =
+      item.subfolder && item.subfolder.trim()
+        ? [year, month, day, item.subfolder.trim()]
+        : [year, month, day];
+
+    setFolderNavigation({
+      path,
+      highlightItemId: item.id,
+      trigger: Date.now(),
+    });
+    handleViewModeChange('folder');
   };
 
   // Lọc dữ liệu theo từ khóa và bộ lọc loại, ngày
@@ -407,6 +445,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             onEdit={handleEdit}
             onDelete={handleDelete}
             onNewExportInFolder={handleNewExportInFolder}
+            targetPath={folderNavigation?.path}
+            highlightItemId={folderNavigation?.highlightItemId}
+            revealTrigger={folderNavigation?.trigger}
           />
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
@@ -416,6 +457,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
               isAdmin={isAdmin}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onRevealInFolder={handleRevealInFolder}
             />
           </div>
         )}

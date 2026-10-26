@@ -33,6 +33,9 @@ interface FolderExplorerViewProps {
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
   onNewExportInFolder?: (subfolder?: string, date?: string) => void;
+  targetPath?: string[];
+  highlightItemId?: string | null;
+  revealTrigger?: number;
 }
 
 export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
@@ -41,9 +44,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   onEdit,
   onDelete,
   onNewExportInFolder,
+  targetPath,
+  highlightItemId,
+  revealTrigger,
 }) => {
   // Đường dẫn hiện tại: [] = Root, ['2026'], ['2026', '2026-10'], ['2026', '2026-10', '10-15'], ['2026', '2026-10', '10-15', 'bestway']
   const [currentPath, setCurrentPath] = useState<string[]>(() => {
+    if (targetPath && targetPath.length > 0) return targetPath;
     if (items.length > 0) {
       const latestDate = items[0].exported_at; // YYYY-MM-DD
       const year = latestDate.slice(0, 4);
@@ -52,6 +59,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     }
     return ['2026', '2026-10'];
   });
+
+  // Tự động nhảy tới thư mục mục tiêu khi người dùng bấm "Mở thư mục" từ bảng
+  useEffect(() => {
+    if (targetPath && targetPath.length > 0) {
+      setCurrentPath(targetPath);
+    }
+  }, [targetPath, revealTrigger]);
 
   // Modal tạo thư mục mới
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
@@ -708,6 +722,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
+                      isHighlighted={file.id === highlightItemId}
                     />
                   ))}
                 </div>
@@ -765,6 +780,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
                       onAttachImage={(item) => onEdit?.(item)}
+                      isHighlighted={file.id === highlightItemId}
                     />
                   ))}
                 </div>
@@ -798,6 +814,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
                       onAttachImage={(item) => onEdit?.(item)}
+                      isHighlighted={file.id === highlightItemId}
                     />
                   ))}
                 </div>
@@ -854,6 +871,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
+                      isHighlighted={file.id === highlightItemId}
                     />
                   ))}
                 </div>

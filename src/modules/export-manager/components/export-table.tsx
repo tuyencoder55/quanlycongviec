@@ -13,6 +13,7 @@ import {
   ArrowUpDown,
   FileText,
   Calendar,
+  FolderOpen,
 } from 'lucide-react';
 
 interface ExportTableProps {
@@ -21,6 +22,7 @@ interface ExportTableProps {
   isAdmin: boolean;
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
+  onRevealInFolder?: (item: ExportItem) => void;
 }
 
 type SortField =
@@ -39,6 +41,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   isAdmin,
   onEdit,
   onDelete,
+  onRevealInFolder,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('board_code');
@@ -233,8 +236,8 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                 </div>
               </th>
 
-              {isAdmin && (
-                <th className="py-2.5 px-3 w-20 text-center font-semibold">
+              {(isAdmin || onRevealInFolder) && (
+                <th className="py-2.5 px-3 w-24 text-center font-semibold">
                   Thao tác
                 </th>
               )}
@@ -361,11 +364,20 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                       title="Nhấp để copy toàn bộ tên file"
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
-                        {item.subfolder && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-                            📁 {item.subfolder}
-                          </span>
-                        )}
+                        {item.subfolder ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRevealInFolder?.(item);
+                            }}
+                            className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 hover:border-amber-500/50 shrink-0 transition-all flex items-center gap-1 cursor-pointer group/subfolder shadow-2xs active:scale-95"
+                            title={`Nhấp để nhảy thẳng tới thư mục "${item.subfolder}" trong Cây Thư Mục`}
+                          >
+                            <span>📁 {item.subfolder}</span>
+                            <FolderOpen className="w-2.5 h-2.5 opacity-60 group-hover/subfolder:opacity-100" />
+                          </button>
+                        ) : null}
                         <span className="truncate">{item.full_name}</span>
                       </div>
                       <button
@@ -381,11 +393,23 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Thao tác (Chỉ Admin) */}
-                  {isAdmin && (
+                  {/* Thao tác */}
+                  {(isAdmin || onRevealInFolder) && (
                     <td className="py-2 px-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
-                        {onEdit && (
+                        {/* Nút Mở vị trí thư mục (Reveal in folder) */}
+                        {onRevealInFolder && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onRevealInFolder(item)}
+                            className="w-6 h-6 text-amber-400 hover:text-amber-300 hover:bg-amber-500/15 rounded-lg transition-colors"
+                            title={`Mở vị trí trong Cây Thư Mục (${item.subfolder ? `thư mục ${item.subfolder}` : `ngày ${formatDate(item.exported_at)}`})`}
+                          >
+                            <FolderOpen className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        {isAdmin && onEdit && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -396,7 +420,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                             <Edit2 className="w-3 h-3" />
                           </Button>
                         )}
-                        {onDelete && (
+                        {isAdmin && onDelete && (
                           <Button
                             variant="ghost"
                             size="icon"

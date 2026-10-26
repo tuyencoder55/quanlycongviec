@@ -23,6 +23,7 @@ interface FileItemCardProps {
   onDelete?: (id: string) => void;
   onViewImage?: (item: ExportItem) => void;
   onAttachImage?: (item: ExportItem) => void;
+  isHighlighted?: boolean;
 }
 
 export const FileItemCard: React.FC<FileItemCardProps> = ({
@@ -32,9 +33,18 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
   onDelete,
   onViewImage,
   onAttachImage,
+  isHighlighted = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  // Tự động cuộn đến file khi được nhảy tới từ bảng
+  React.useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isHighlighted]);
 
   const hasImage = Boolean(item.image_url);
   const isImageOnly = item.type === 'image';
@@ -54,10 +64,13 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
 
   return (
     <div
+      ref={cardRef}
       onClick={handleCardClick}
-      className={`group relative flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card/30 hover:bg-card hover:border-border transition-all duration-200 ${
-        hasImage ? 'cursor-pointer hover:border-emerald-500/40 hover:shadow-xs' : ''
-      }`}
+      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+        isHighlighted
+          ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/70 shadow-lg shadow-amber-500/10 animate-in fade-in'
+          : 'border-border/60 bg-card/30 hover:bg-card hover:border-border'
+      } ${hasImage ? 'cursor-pointer hover:border-emerald-500/40 hover:shadow-xs' : ''}`}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* ICON HOẶC THUMBNAIL ĐƠN XUẤT */}
@@ -106,6 +119,11 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             >
               {item.full_name}
             </span>
+            {isHighlighted && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-400 text-slate-950 shadow-xs animate-pulse">
+                Đang tìm
+              </span>
+            )}
             <button
               onClick={handleCopy}
               className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-accent transition-colors"

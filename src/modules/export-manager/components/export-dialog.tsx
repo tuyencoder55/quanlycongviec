@@ -9,21 +9,14 @@ import {
 } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
 import type { ExportItem, ExportFormData } from '../types';
 import type { ExportType } from '../../../types/database';
 import { parseTaskTitle } from '../../kanban/utils/parser';
 import {
-  Sparkles,
-  Layers,
-  Box,
-  Hash,
   FileImage,
   UploadCloud,
   X,
-  Eye,
   RefreshCw,
-  Paperclip,
 } from 'lucide-react';
 import { optimizeImage, formatBytes } from '../utils/image-optimizer';
 import { uploadExportImage } from '../utils/storage-upload';
@@ -206,43 +199,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-3 text-xs">
-            {/* Loại xuất */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Loại xuất</label>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant={type === 'board' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setType('board')}
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Xuất Bảng</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={type === 'mold' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setType('mold')}
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <Box className="w-3.5 h-3.5" />
-                  <span>Xuất Khuôn</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={type === 'po' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setType('po')}
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <Hash className="w-3.5 h-3.5" />
-                  <span>Xuất PO</span>
-                </Button>
-              </div>
-            </div>
-
             {/* Tên đầy đủ */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground flex items-center justify-between">
@@ -392,47 +348,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               />
             </div>
 
-            {/* Thư mục con (tùy chọn) */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-foreground">
-                  Thư mục con (tự đặt tên)
-                </label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  VD: bestway, chiều, ca 1...
-                </span>
-              </div>
-              <Input
-                value={subfolder}
-                onChange={(e) => setSubfolder(e.target.value)}
-                placeholder="Để trống nếu nằm ở thư mục gốc của ngày"
-                className="text-xs font-mono"
-              />
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
-                <span className="text-[10px]">Gợi ý nhanh:</span>
-                {['bestway', 'chiều', 'sáng', 'gấp'].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setSubfolder(tag)}
-                    className="px-2 py-0.5 rounded-md bg-secondary/80 hover:bg-secondary text-[10px] font-mono border border-border/50 text-foreground transition-all"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Ghi chú */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Ghi chú thêm</label>
-              <Input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="VD: Xuất cho xưởng 2, kiểm tra khớp lệnh..."
-                className="text-xs"
-              />
-            </div>
           </div>
 
           <DialogFooter>

@@ -151,6 +151,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const handleNameChange = (val: string) => {
     setFullName(val);
     if (!initialItem) {
+      if (!val.trim()) {
+        setBoardCode('');
+        setMoldCode('');
+        setRefValue('');
+        return;
+      }
       const parsed = parseTaskTitle(val);
       if (parsed.board_code) setBoardCode(parsed.board_code);
       if (parsed.mold_code) setMoldCode(parsed.mold_code);

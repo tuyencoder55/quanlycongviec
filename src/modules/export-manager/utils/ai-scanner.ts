@@ -97,8 +97,8 @@ export async function scanScreenshotWithGemini(
   const prompt = `Bạn là chuyên gia bóc tách tên file sản xuất cho xưởng in/khuôn bảng.
 Hãy đọc toàn bộ danh sách tên file trong ảnh chụp màn hình này (dù là trong thư mục Windows, bảng tính Excel, hay danh sách Zalo).
 Với mỗi file/dòng, hãy phân tích cú pháp chuẩn sau:
-- "board_code": mã bảng (thường là token đầu tiên dạng 13502-W1, 14200-A2, 12800-B1...).
-- "mold_code": mã khuôn (thường có tiền tố VY-, VX-, VL-, VXS- kèm số, ví dụ VY-1078, VX-2041, VL-0992...). Nếu không có thì để null.
+- "board_code": mã bảng (thường là token đầu tiên dạng 13502-W1, 14200-A2, 12800-B1, 13853-W4+13854-W4...).
+- "mold_code": mã khuôn (thường có tiền tố VY-, VX-, VL-, VXS- kèm số, ví dụ VY-1078, VX-2041, VL-0992...). Nếu có từ 2 khuôn trở lên thì nối bằng dấu cộng "+" (ví dụ VY-1115+VY-1116). Nếu không có thì để null.
 - "ref_kind": "po" nếu có số PO, hoặc "date" nếu có ngày tham chiếu. Nếu không có thì null.
 - "ref_value": số PO (ví dụ 22144368) hoặc ngày tháng. Nếu không có thì null.
 - "full_name": tên đầy đủ gốc của file (loại bỏ phần đuôi mở rộng .pdf/.ai/.cdr nếu có).

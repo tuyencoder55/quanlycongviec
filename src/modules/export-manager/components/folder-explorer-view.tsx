@@ -180,18 +180,21 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   const currentDay = currentPath[2];
   const currentSubfolder = currentPath[3];
 
-  // Danh sách các năm có trong dữ liệu + năm người dùng tự tạo
+  // Danh sách các năm có trong dữ liệu + năm người dùng tự tạo (sắp xếp Năm mới nhất lên trước)
   const availableYears = useMemo(() => {
     const set = new Set<string>();
     customYears.forEach((y) => set.add(y));
     items.forEach((item) => {
-      if (item.exported_at) set.add(item.exported_at.slice(0, 4));
+      if (item.exported_at) {
+        const d = item.exported_at.replace(/\//g, '-').slice(0, 10);
+        if (d.length >= 4) set.add(d.slice(0, 4));
+      }
     });
-    if (set.size === 0) set.add('2026');
-    return Array.from(set).sort().reverse();
+    if (set.size === 0) set.add(new Date().getFullYear().toString());
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [items, customYears]);
 
-  // Danh sách các tháng trong năm được chọn + tháng tự tạo
+  // Danh sách các tháng trong năm được chọn + tháng tự tạo (sắp xếp Tháng mới nhất lên trước: 12 -> 01)
   const availableMonths = useMemo(() => {
     if (!currentYear) return [];
     const set = new Set<string>();
@@ -199,15 +202,17 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       if (m.startsWith(currentYear)) set.add(m);
     });
     items.forEach((item) => {
-      if (item.exported_at && item.exported_at.startsWith(currentYear)) {
-        set.add(item.exported_at.slice(0, 7)); // YYYY-MM
+      if (item.exported_at) {
+        const d = item.exported_at.replace(/\//g, '-').slice(0, 10);
+        if (d.startsWith(currentYear) && d.length >= 7) {
+          set.add(d.slice(0, 7)); // Định dạng chuẩn YYYY-MM
+        }
       }
     });
-    if (set.size === 0) set.add(`${currentYear}-10`);
-    return Array.from(set).sort().reverse();
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [items, currentYear, customMonths]);
 
-  // Danh sách các ngày trong tháng được chọn + ngày tự tạo
+  // Danh sách các ngày trong tháng được chọn + ngày tự tạo (sắp xếp Ngày mới nhất lên trước: 31 -> 01)
   const availableDays = useMemo(() => {
     if (!currentMonth) return [];
     const map = new Map<string, number>();
@@ -219,9 +224,12 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     });
 
     items.forEach((item) => {
-      if (item.exported_at && item.exported_at.startsWith(currentMonth)) {
-        const dayTag = item.exported_at.slice(5, 10); // MM-DD
-        map.set(dayTag, (map.get(dayTag) || 0) + 1);
+      if (item.exported_at) {
+        const d = item.exported_at.replace(/\//g, '-').slice(0, 10);
+        if (d.startsWith(currentMonth) && d.length >= 10) {
+          const dayTag = d.slice(5, 10); // Định dạng chuẩn MM-DD (ví dụ: 10-27)
+          map.set(dayTag, (map.get(dayTag) || 0) + 1);
+        }
       }
     });
     return Array.from(map.entries())
@@ -233,7 +241,10 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   const dayContents = useMemo(() => {
     if (!currentMonth || !currentDay) return { subfolders: [], directFiles: [] };
     const fullDate = `${currentMonth.slice(0, 4)}-${currentDay}`; // YYYY-MM-DD
-    const dayItems = items.filter((item) => item.exported_at === fullDate);
+    const dayItems = items.filter((item) => {
+      const d = (item.exported_at || '').replace(/\//g, '-').slice(0, 10);
+      return d === fullDate;
+    });
 
     const subfolderMap = new Map<string, number>();
     const directFiles: ExportItem[] = [];
@@ -250,10 +261,19 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       }
     });
 
-    const subfolders = Array.from(subfolderMap.entries()).map(([name, count]) => ({
-      name,
-      count,
-    }));
+    // Sắp xếp file mới tạo nhất lên đầu
+    directFiles.sort((a, b) => {
+      const timeA = new Date(a.created_at || a.exported_at).getTime();
+      const timeB = new Date(b.created_at || b.exported_at).getTime();
+      return timeB - timeA;
+    });
+
+    const subfolders = Array.from(subfolderMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({
+        name,
+        count,
+      }));
 
     return { subfolders, directFiles };
   }, [items, currentMonth, currentDay, customFolders]);
@@ -262,12 +282,20 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   const subfolderFiles = useMemo(() => {
     if (!currentMonth || !currentDay || !currentSubfolder) return [];
     const fullDate = `${currentMonth.slice(0, 4)}-${currentDay}`;
-    return items.filter(
-      (item) =>
-        item.exported_at === fullDate &&
-        item.subfolder &&
-        item.subfolder.toLowerCase() === currentSubfolder.toLowerCase()
-    );
+    return items
+      .filter((item) => {
+        const d = (item.exported_at || '').replace(/\//g, '-').slice(0, 10);
+        return (
+          d === fullDate &&
+          item.subfolder &&
+          item.subfolder.toLowerCase() === currentSubfolder.toLowerCase()
+        );
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.created_at || a.exported_at).getTime();
+        const timeB = new Date(b.created_at || b.exported_at).getTime();
+        return timeB - timeA;
+      });
   }, [items, currentMonth, currentDay, currentSubfolder]);
 
   // Điều hướng
@@ -524,7 +552,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         {level === 0 && (
           <div className="space-y-2">
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
-              <span>Chọn Năm</span>
+              <span>Chọn Năm • 年份列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
                 (Chuột phải vào vùng trống để tạo thư mục mới)
               </span>
@@ -570,7 +598,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         {level === 1 && (
           <div className="space-y-2">
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
-              <span>Năm {currentYear} &gt; Chọn Tháng</span>
+              <span>Năm {currentYear} &gt; Chọn Tháng • 月份列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
                 (Chuột phải vào vùng trống để tạo tháng mới)
               </span>
@@ -616,7 +644,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         {level === 2 && (
           <div className="space-y-2">
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
-              <span>Tháng {currentMonth} &gt; Chọn Ngày</span>
+              <span>Tháng {currentMonth} &gt; Chọn Ngày • 日期列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
                 (Chuột phải vào vùng trống để tạo ngày mới)
               </span>
@@ -661,7 +689,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             {/* 1. Nhóm thư mục con (ví dụ: bestway, chiều...) */}
             <div className="space-y-2">
               <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
-                <span>Thư Mục Con Trong Ngày {currentDay}</span>
+                <span>Thư Mục Con (Ngày {currentDay}) • 子目录</span>
                 <span className="text-[10px] text-muted-foreground font-normal">
                   (Chuột phải vào vùng trống để tạo thư mục mới)
                 </span>
@@ -707,7 +735,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                 <div className="text-[11px] font-mono text-emerald-400 font-semibold uppercase tracking-wider flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <FileImage className="w-3.5 h-3.5" />
-                    <span>Hình Ảnh Đính Kèm (Ngày {currentDay})</span>
+                    <span>Hình Ảnh Đính Kèm (Ngày {currentDay}) • 图片附件</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground/80 font-normal">
                     {dayImages.length} hình ảnh
@@ -734,7 +762,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-rose-400" />
-                  <span>File Xuất PDF (Thư mục gốc ngày {currentDay})</span>
+                  <span>File Xuất PDF (Ngày {currentDay}) • PDF 文件</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground/80 font-normal">
                   {dayPdfs.length} file

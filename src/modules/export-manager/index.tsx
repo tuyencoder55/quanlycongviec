@@ -90,16 +90,21 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   }, [folderNavigation?.trigger]);
 
   const handleRevealInFolder = (item: ExportItem) => {
-    const dateStr = item.exported_at || new Date().toISOString().split('T')[0];
+    // 1. Chuẩn hóa chuỗi ngày an toàn (hỗ trợ cả YYYY-MM-DD lẫn timestamp)
+    const rawDate = item.exported_at || new Date().toISOString().split('T')[0];
+    const dateStr = rawDate.replace(/\//g, '-').slice(0, 10);
     const year = dateStr.slice(0, 4);
     const month = dateStr.slice(0, 7);
     const day = dateStr.slice(5, 10);
 
-    const path =
-      item.subfolder && item.subfolder.trim()
-        ? [year, month, day, item.subfolder.trim()]
-        : [year, month, day];
+    const subfolder = item.subfolder ? item.subfolder.trim() : '';
+    const path = subfolder ? [year, month, day, subfolder] : [year, month, day];
 
+    // 2. Tắt các bộ lọc loại/ngày để cây thư mục hiển thị trọn vẹn mọi file
+    setTypeFilter('all');
+    setDateFilter('all');
+
+    // 3. Thiết lập đường dẫn đích và hiệu ứng highlight
     setFolderNavigation({
       path,
       highlightItemId: item.id,
@@ -177,8 +182,42 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   const handleSave = async (formData: ExportFormData, id?: string) => {
     if (id) {
       await updateExport({ id, updates: formData });
+      // Tự động điều hướng Cây thư mục đến đúng folder Năm > Tháng > Ngày của file vừa cập nhật
+      const rawDate = formData.exported_at || new Date().toISOString().split('T')[0];
+      const dateStr = rawDate.replace(/\//g, '-').slice(0, 10);
+      const year = dateStr.slice(0, 4);
+      const month = dateStr.slice(0, 7);
+      const day = dateStr.slice(5, 10);
+      const subfolder = formData.subfolder ? formData.subfolder.trim() : '';
+      const path = subfolder ? [year, month, day, subfolder] : [year, month, day];
+      setFolderNavigation({
+        path,
+        highlightItemId: id,
+        trigger: Date.now(),
+      });
+      handleViewModeChange('folder');
     } else {
-      await createExport(formData);
+      const newItem = await createExport(formData);
+      // Tự động mở đúng folder Năm > Tháng > Ngày và highlight sáng viền vàng file vừa tạo
+      if (newItem) {
+        handleRevealInFolder(newItem);
+      } else {
+        const rawDate = formData.exported_at || new Date().toISOString().split('T')[0];
+        const dateStr = rawDate.replace(/\//g, '-').slice(0, 10);
+        const year = dateStr.slice(0, 4);
+        const month = dateStr.slice(0, 7);
+        const day = dateStr.slice(5, 10);
+        const subfolder = formData.subfolder ? formData.subfolder.trim() : '';
+        const path = subfolder ? [year, month, day, subfolder] : [year, month, day];
+        setTypeFilter('all');
+        setDateFilter('all');
+        setFolderNavigation({
+          path,
+          highlightItemId: '',
+          trigger: Date.now(),
+        });
+        handleViewModeChange('folder');
+      }
     }
   };
 

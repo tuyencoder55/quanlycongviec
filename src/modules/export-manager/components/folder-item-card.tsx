@@ -16,17 +16,17 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
   updatedAt,
   onClick,
 }) => {
-  // Nhãn loại thư mục hiển thị tinh tế
+  // Nhãn loại thư mục hiển thị tinh tế (song ngữ Việt - Trung chuẩn thứ tự thời gian)
   const getSubLabel = () => {
     switch (type) {
       case 'year':
-        return 'Năm';
+        return 'Năm • 年';
       case 'month':
-        return 'Tháng';
+        return 'Tháng • 月';
       case 'day':
-        return 'Ngày xuất';
+        return 'Ngày • 日';
       case 'subfolder':
-        return 'Thư mục con';
+        return 'Thư mục con • 目录';
       default:
         return 'Thư mục';
     }

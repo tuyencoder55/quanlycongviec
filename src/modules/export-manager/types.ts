@@ -15,6 +15,7 @@ export interface ExportFormData {
   image_url?: string | null;
   file_size_bytes?: number | null;
   note?: string;
+  is_legacy?: boolean;
 }
 
 export type ExportViewMode = 'folder' | 'table';

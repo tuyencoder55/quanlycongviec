@@ -51,6 +51,7 @@ export interface ExportRow {
   subfolder?: string | null;
   image_url?: string | null;
   file_size_bytes?: number | null;
+  is_legacy?: boolean;
   note: string | null;
   created_by: string | null;
   created_at: string;
@@ -141,6 +142,7 @@ export interface Database {
           subfolder?: string | null;
           image_url?: string | null;
           file_size_bytes?: number | null;
+          is_legacy?: boolean;
           note?: string | null;
           created_by?: string | null;
           created_at?: string;
@@ -157,6 +159,7 @@ export interface Database {
           subfolder?: string | null;
           image_url?: string | null;
           file_size_bytes?: number | null;
+          is_legacy?: boolean;
           note?: string | null;
         };
       };

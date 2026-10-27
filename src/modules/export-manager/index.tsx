@@ -239,12 +239,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
       // 1. Ngày xuất Bảng
       let boardDate = '';
       if (item.type === 'board') {
-        boardDate = item.exported_at;
+        boardDate = item.is_legacy ? 'Đã xuất trước đây' : item.exported_at;
       } else if (item.board_code) {
         const found = exportsList.find(
-          (e) => e.type === 'board' && e.board_code.toLowerCase() === item.board_code.toLowerCase()
+          (e) => (e.type === 'board' || e.is_legacy) && e.board_code.toLowerCase() === item.board_code.toLowerCase()
         );
-        if (found) boardDate = found.exported_at;
+        if (found) boardDate = found.is_legacy ? 'Đã xuất trước đây' : found.exported_at;
       }
 
       // 2. Ngày xuất Khuôn

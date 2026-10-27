@@ -48,6 +48,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const [exportedAt, setExportedAt] = useState(new Date().toISOString().split('T')[0]);
   const [subfolder, setSubfolder] = useState('');
   const [note, setNote] = useState('');
+  const [isLegacy, setIsLegacy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [fileSizeBytes, setFileSizeBytes] = useState<number | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -65,6 +66,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setExportedAt(initialItem.exported_at || new Date().toISOString().split('T')[0]);
       setSubfolder(initialItem.subfolder || '');
       setNote(initialItem.note || '');
+      setIsLegacy(Boolean(initialItem.is_legacy));
       setImageUrl(initialItem.image_url || null);
       setFileSizeBytes(initialItem.file_size_bytes || null);
     } else {
@@ -76,6 +78,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       setExportedAt(defaultDate || new Date().toISOString().split('T')[0]);
       setSubfolder(defaultSubfolder || '');
       setNote('');
+      setIsLegacy(false);
       setImageUrl(null);
       setFileSizeBytes(null);
     }
@@ -175,6 +178,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           subfolder: subfolder.trim() || undefined,
           image_url: imageUrl,
           file_size_bytes: fileSizeBytes,
+          is_legacy: isLegacy,
           note: note.trim() || undefined,
         },
         initialItem?.id
@@ -249,6 +253,26 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                   className="font-mono text-xs"
                 />
               </div>
+            </div>
+
+            {/* Đánh dấu Bảng đã xuất từ trước (hồ sơ cũ) */}
+            <div className="p-2.5 rounded-lg border border-border/60 bg-secondary/30 hover:bg-secondary/50 transition-colors">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isLegacy}
+                  onChange={(e) => setIsLegacy(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                />
+                <div className="text-[11px] leading-snug">
+                  <span className="font-semibold text-foreground">
+                    Bảng này đã xuất từ trước (hồ sơ cũ)
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground mt-0.5">
+                    Hệ thống sẽ ghi nhận nhãn <strong>"Đã xuất trước đây"</strong> trong bảng tra cứu mà không phụ thuộc ngày tháng.
+                  </span>
+                </div>
+              </label>
             </div>
 
             {/* ĐÍNH KÈM ẢNH ĐƠN XUẤT ĐỐI CHIẾU */}

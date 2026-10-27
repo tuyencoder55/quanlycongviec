@@ -149,6 +149,12 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
               </span>
             )}
 
+            {!isImageOnly && item.is_legacy && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-sans font-medium bg-secondary/80 text-muted-foreground border border-border/50">
+                Hồ sơ cũ
+              </span>
+            )}
+
             {item.mold_code && (
               <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 {item.mold_code}

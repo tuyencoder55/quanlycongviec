@@ -14,6 +14,7 @@ import {
   FileText,
   Calendar,
   FolderOpen,
+  History,
 } from 'lucide-react';
 
 interface ExportTableProps {
@@ -55,13 +56,18 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   const getExportDates = (item: ExportItem) => {
     // 1. Ngày xuất Bảng: lấy từ chính dòng này (nếu là board) hoặc dòng xuất bảng có cùng mã
     let boardDate: string | null = null;
+    let isBoardLegacy = Boolean(item.is_legacy);
+
     if (item.type === 'board') {
       boardDate = item.exported_at;
     } else if (item.board_code) {
       const found = pool.find(
-        (e) => e.type === 'board' && e.board_code.toLowerCase() === item.board_code.toLowerCase()
+        (e) => e.board_code.toLowerCase() === item.board_code.toLowerCase() && (e.type === 'board' || e.is_legacy)
       );
-      if (found) boardDate = found.exported_at;
+      if (found) {
+        boardDate = found.exported_at;
+        if (found.is_legacy) isBoardLegacy = true;
+      }
     }
 
     // 2. Ngày xuất Khuôn: lấy từ chính dòng này (nếu là mold) hoặc dòng xuất khuôn có cùng mã khuôn
@@ -93,7 +99,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
       if (found) poDate = found.exported_at;
     }
 
-    return { boardDate, moldDate, poDate };
+    return { boardDate, moldDate, poDate, isBoardLegacy };
   };
 
   const copyToClipboard = (text: string, id: string) => {
@@ -122,8 +128,8 @@ export const ExportTable: React.FC<ExportTableProps> = ({
     let valB = '';
 
     if (sortField === 'board_date') {
-      valA = datesA.boardDate || '';
-      valB = datesB.boardDate || '';
+      valA = datesA.isBoardLegacy ? '0000-00-00' : (datesA.boardDate || '');
+      valB = datesB.isBoardLegacy ? '0000-00-00' : (datesB.boardDate || '');
     } else if (sortField === 'mold_date') {
       valA = datesA.moldDate || '';
       valB = datesB.moldDate || '';
@@ -247,7 +253,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
           {/* Dữ liệu các dòng Bảng tính */}
           <tbody className="divide-y divide-border/50 font-mono">
             {sortedItems.map((item, index) => {
-              const { boardDate, moldDate, poDate } = getExportDates(item);
+              const { boardDate, moldDate, poDate, isBoardLegacy } = getExportDates(item);
 
               const isNameCopied = copiedId === `name-${item.id}`;
               const isBoardCopied = copiedId === `board-${item.id}`;
@@ -324,7 +330,15 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
                   {/* 1. Ngày xuất Bảng */}
                   <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
-                    {boardDate ? (
+                    {isBoardLegacy ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-secondary/80 text-muted-foreground border border-border/60 text-[10px] font-sans font-medium"
+                        title="Bảng đã xuất trước đó (hồ sơ cũ)"
+                      >
+                        <History className="w-3 h-3 text-muted-foreground/80" />
+                        <span>Đã xuất trước đây</span>
+                      </span>
+                    ) : boardDate ? (
                       <span className="inline-flex items-center gap-1 text-indigo-400/90 font-medium">
                         <Calendar className="w-3 h-3 opacity-60" />
                         <span>{formatDate(boardDate)}</span>

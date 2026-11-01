@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar, type ActiveTab } from './components/layout/sidebar';
 import { Header } from './components/layout/header';
 import { KanbanBoard } from './modules/kanban';
@@ -9,14 +9,24 @@ import { Button } from './components/ui/button';
 import { Sparkles, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from './hooks/use-auth';
 import { AiScannerModal } from './modules/export-manager/components/ai-scanner-modal';
+import { APP_FEATURES, DEFAULT_ACTIVE_TAB } from './config/features';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('kanban');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(DEFAULT_ACTIVE_TAB);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [newTaskTrigger, setNewTaskTrigger] = useState<number>(0);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState<boolean>(false);
   const { isAdmin } = useAuth();
+
+  // Tự động chuyển về tab mặc định nếu tab hiện tại bị tắt trong cấu hình
+  useEffect(() => {
+    if (activeTab === 'kanban' && !APP_FEATURES.showKanban) {
+      setActiveTab(DEFAULT_ACTIVE_TAB);
+    } else if (activeTab === 'completed' && !APP_FEATURES.showCompleted) {
+      setActiveTab(DEFAULT_ACTIVE_TAB);
+    }
+  }, [activeTab]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -33,6 +43,7 @@ export default function App() {
             setIsMobileMenuOpen(false);
           }}
           onNewTaskClick={() => {
+            if (!APP_FEATURES.showKanban) return;
             setActiveTab('kanban');
             setNewTaskTrigger((prev) => prev + 1);
           }}
@@ -54,6 +65,7 @@ export default function App() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onNewTaskClick={() => {
+            if (!APP_FEATURES.showKanban) return;
             setActiveTab('kanban');
             setNewTaskTrigger((prev) => prev + 1);
           }}
@@ -63,27 +75,27 @@ export default function App() {
         <main className="flex-1 overflow-hidden p-3 lg:p-4 flex flex-col min-h-0">
           {/* Hiển thị Tab tương ứng - Tối ưu 100% diện tích làm việc */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {activeTab === 'kanban' && (
+            {activeTab === 'kanban' && APP_FEATURES.showKanban && (
               <KanbanBoard
                 key={newTaskTrigger}
                 externalSearch={searchTerm}
               />
             )}
 
-            {activeTab === 'completed' && (
+            {activeTab === 'completed' && APP_FEATURES.showCompleted && (
               <CompletedTasksScreen
                 externalSearch={searchTerm}
                 onNavigateToKanban={() => setActiveTab('kanban')}
               />
             )}
 
-            {activeTab === 'search' && (
+            {activeTab === 'search' && APP_FEATURES.showExports && (
               <ExportManager
                 externalSearch={searchTerm}
               />
             )}
 
-            {activeTab === 'bulk' && (
+            {activeTab === 'bulk' && APP_FEATURES.showBulkScanner && (
               <div className="flex-1 flex items-center justify-center p-4">
                 <Card className="border border-border/80 bg-card/40 p-8 max-w-lg w-full text-center rounded-2xl shadow-xl backdrop-blur-sm space-y-5">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-500/30 text-indigo-400 mx-auto flex items-center justify-center">

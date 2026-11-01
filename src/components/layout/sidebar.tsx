@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { StorageWidget } from './storage-widget';
+import { APP_FEATURES } from '../../config/features';
 
 export type ActiveTab = 'kanban' | 'completed' | 'search' | 'bulk';
 
@@ -52,67 +53,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Nút tạo thẻ việc mới */}
-        <div className="mb-4">
-          <Button
-            onClick={onNewTaskClick}
-            className="w-full gap-2 font-medium h-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm text-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thẻ việc mới</span>
-            <kbd className="ml-auto text-[10px] font-mono opacity-60">N</kbd>
-          </Button>
-        </div>
+        {/* Nút tạo thẻ việc mới (chỉ hiện khi module Danh sách việc được bật) */}
+        {APP_FEATURES.showKanban && (
+          <div className="mb-4">
+            <Button
+              onClick={onNewTaskClick}
+              className="w-full gap-2 font-medium h-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thẻ việc mới</span>
+              <kbd className="ml-auto text-[10px] font-mono opacity-60">N</kbd>
+            </Button>
+          </div>
+        )}
 
         {/* Menu điều hướng chính phong cách Linear */}
         <nav className="space-y-1">
-          <button
-            onClick={() => onTabChange('kanban')}
-            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
-              activeTab === 'kanban'
-                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-            <span className="flex-1">Danh sách việc</span>
-          </button>
+          {APP_FEATURES.showKanban && (
+            <button
+              onClick={() => onTabChange('kanban')}
+              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+                activeTab === 'kanban'
+                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 text-indigo-400" />
+              <span className="flex-1">Danh sách việc</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => onTabChange('completed')}
-            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
-              activeTab === 'completed'
-                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="flex-1">Task hoàn thành</span>
-          </button>
+          {APP_FEATURES.showCompleted && (
+            <button
+              onClick={() => onTabChange('completed')}
+              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+                activeTab === 'completed'
+                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="flex-1">Task hoàn thành</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => onTabChange('search')}
-            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
-              activeTab === 'search'
-                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-            }`}
-          >
-            <Search className="w-4 h-4 text-cyan-400" />
-            <span className="flex-1">Tra cứu xuất khuôn bảng</span>
-          </button>
+          {APP_FEATURES.showExports && (
+            <button
+              onClick={() => onTabChange('search')}
+              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+                activeTab === 'search'
+                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              }`}
+            >
+              <Search className="w-4 h-4 text-cyan-400" />
+              <span className="flex-1">Tra cứu xuất khuôn bảng</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => onTabChange('bulk')}
-            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
-              activeTab === 'bulk'
-                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4 text-amber-400" />
-            <span className="flex-1">Thêm hàng loạt</span>
-          </button>
+          {APP_FEATURES.showBulkScanner && (
+            <button
+              onClick={() => onTabChange('bulk')}
+              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+                activeTab === 'bulk'
+                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+              <span className="flex-1">Thêm hàng loạt</span>
+            </button>
+          )}
         </nav>
       </div>
 

@@ -1,29 +1,47 @@
 /**
  * Cấu hình bật/tắt các module tính năng trong hệ thống (Feature Flags)
- * 
- * - Đổi thành true để hiển thị module
- * - Đổi thành false để ẩn module hoàn toàn trên mọi thiết bị
- * 
- * Toàn bộ code và logic của các module được bảo toàn nguyên vẹn 100%,
- * chỉ cần đổi giá trị tại đây là giao diện tự động đồng bộ trên tất cả máy tính & điện thoại.
  */
-export const APP_FEATURES = {
-  // Quản lý công việc (Bảng Kanban & Danh sách việc)
+
+export interface FeatureConfig {
+  showKanban: boolean;
+  showCompleted: boolean;
+  showBulkScanner: boolean;
+}
+
+export const STORAGE_KEY_FEATURES = 'nexus_features_config';
+
+// Cấu hình mặc định: Ẩn Danh sách việc và Task hoàn thành
+export const DEFAULT_FEATURES: FeatureConfig = {
   showKanban: false,
-
-  // Kho lưu trữ lịch sử công việc đã hoàn tất (Task hoàn thành)
   showCompleted: false,
-
-  // Quản lý tra cứu xuất khuôn bảng
-  showExports: true,
-
-  // Trình quét ảnh thông minh AI & Thêm hàng loạt
   showBulkScanner: true,
-} as const;
+};
 
-// Xác định Tab mặc định khi mở ứng dụng (Ưu tiên module đang bật)
-export const DEFAULT_ACTIVE_TAB = APP_FEATURES.showKanban
-  ? 'kanban'
-  : APP_FEATURES.showExports
-  ? 'search'
-  : 'bulk';
+// Đọc cấu hình từ localStorage khi tải trang
+export function getInitialFeatures(): FeatureConfig {
+  if (typeof window === 'undefined') return DEFAULT_FEATURES;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_FEATURES);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        showKanban: typeof parsed.showKanban === 'boolean' ? parsed.showKanban : DEFAULT_FEATURES.showKanban,
+        showCompleted: typeof parsed.showCompleted === 'boolean' ? parsed.showCompleted : DEFAULT_FEATURES.showCompleted,
+        showBulkScanner: typeof parsed.showBulkScanner === 'boolean' ? parsed.showBulkScanner : DEFAULT_FEATURES.showBulkScanner,
+      };
+    }
+  } catch (e) {
+    console.error('Lỗi đọc cấu hình features:', e);
+  }
+  return DEFAULT_FEATURES;
+}
+
+// Lưu cấu hình vào localStorage
+export function saveFeatures(features: FeatureConfig): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_FEATURES, JSON.stringify(features));
+  } catch (e) {
+    console.error('Lỗi lưu cấu hình features:', e);
+  }
+}

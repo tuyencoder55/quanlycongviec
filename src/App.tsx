@@ -6,27 +6,34 @@ import { CompletedTasksScreen } from './modules/completed-tasks';
 import { ExportManager } from './modules/export-manager';
 import { Card } from './components/ui/card';
 import { Button } from './components/ui/button';
-import { Sparkles, FileSpreadsheet } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useAuth } from './hooks/use-auth';
 import { AiScannerModal } from './modules/export-manager/components/ai-scanner-modal';
-import { APP_FEATURES, DEFAULT_ACTIVE_TAB } from './config/features';
+import { SettingsModal } from './components/layout/settings-modal';
+import { useFeatures } from './hooks/use-features';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(DEFAULT_ACTIVE_TAB);
+  const { features, toggleFeature, resetFeatures } = useFeatures();
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    return features.showKanban ? 'kanban' : 'search';
+  });
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [newTaskTrigger, setNewTaskTrigger] = useState<number>(0);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const { isAdmin } = useAuth();
 
-  // Tự động chuyển về tab mặc định nếu tab hiện tại bị tắt trong cấu hình
+  // Tự động chuyển về tab Tra cứu nếu tab hiện tại bị tắt trong cài đặt
   useEffect(() => {
-    if (activeTab === 'kanban' && !APP_FEATURES.showKanban) {
-      setActiveTab(DEFAULT_ACTIVE_TAB);
-    } else if (activeTab === 'completed' && !APP_FEATURES.showCompleted) {
-      setActiveTab(DEFAULT_ACTIVE_TAB);
+    if (activeTab === 'kanban' && !features.showKanban) {
+      setActiveTab('search');
+    } else if (activeTab === 'completed' && !features.showCompleted) {
+      setActiveTab('search');
+    } else if (activeTab === 'bulk' && !features.showBulkScanner) {
+      setActiveTab('search');
     }
-  }, [activeTab]);
+  }, [activeTab, features]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
@@ -38,15 +45,17 @@ export default function App() {
       >
         <Sidebar
           activeTab={activeTab}
+          features={features}
           onTabChange={(tab) => {
             setActiveTab(tab);
             setIsMobileMenuOpen(false);
           }}
           onNewTaskClick={() => {
-            if (!APP_FEATURES.showKanban) return;
+            if (!features.showKanban) return;
             setActiveTab('kanban');
             setNewTaskTrigger((prev) => prev + 1);
           }}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       </div>
 
@@ -65,7 +74,7 @@ export default function App() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           onNewTaskClick={() => {
-            if (!APP_FEATURES.showKanban) return;
+            if (!features.showKanban) return;
             setActiveTab('kanban');
             setNewTaskTrigger((prev) => prev + 1);
           }}
@@ -75,27 +84,27 @@ export default function App() {
         <main className="flex-1 overflow-hidden p-3 lg:p-4 flex flex-col min-h-0">
           {/* Hiển thị Tab tương ứng - Tối ưu 100% diện tích làm việc */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {activeTab === 'kanban' && APP_FEATURES.showKanban && (
+            {activeTab === 'kanban' && features.showKanban && (
               <KanbanBoard
                 key={newTaskTrigger}
                 externalSearch={searchTerm}
               />
             )}
 
-            {activeTab === 'completed' && APP_FEATURES.showCompleted && (
+            {activeTab === 'completed' && features.showCompleted && (
               <CompletedTasksScreen
                 externalSearch={searchTerm}
                 onNavigateToKanban={() => setActiveTab('kanban')}
               />
             )}
 
-            {activeTab === 'search' && APP_FEATURES.showExports && (
+            {activeTab === 'search' && (
               <ExportManager
                 externalSearch={searchTerm}
               />
             )}
 
-            {activeTab === 'bulk' && APP_FEATURES.showBulkScanner && (
+            {activeTab === 'bulk' && features.showBulkScanner && (
               <div className="flex-1 flex items-center justify-center p-4">
                 <Card className="border border-border/80 bg-card/40 p-8 max-w-lg w-full text-center rounded-2xl shadow-xl backdrop-blur-sm space-y-5">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-500/30 text-indigo-400 mx-auto flex items-center justify-center">
@@ -137,6 +146,15 @@ export default function App() {
           </div>
         </main>
       </div>
+
+      {/* Modal Cài đặt hiển thị Module */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        features={features}
+        onToggleFeature={toggleFeature}
+        onResetFeatures={resetFeatures}
+      />
     </div>
   );
 }

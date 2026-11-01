@@ -8,12 +8,13 @@ import {
   Eye,
   CheckCircle2,
   Box,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { StorageWidget } from './storage-widget';
-import { APP_FEATURES } from '../../config/features';
+import type { FeatureConfig } from '../../config/features';
 
 export type ActiveTab = 'kanban' | 'completed' | 'search' | 'bulk';
 
@@ -21,6 +22,8 @@ interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   onNewTaskClick: () => void;
+  onOpenSettings: () => void;
+  features: FeatureConfig;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -29,6 +32,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   onNewTaskClick,
+  onOpenSettings,
+  features,
 }) => {
   const { role, switchDemoRole, isConfigured } = useAuth();
 
@@ -54,7 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Nút tạo thẻ việc mới (chỉ hiện khi module Danh sách việc được bật) */}
-        {APP_FEATURES.showKanban && (
+        {features.showKanban && (
           <div className="mb-4">
             <Button
               onClick={onNewTaskClick}
@@ -69,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Menu điều hướng chính phong cách Linear */}
         <nav className="space-y-1">
-          {APP_FEATURES.showKanban && (
+          {features.showKanban && (
             <button
               onClick={() => onTabChange('kanban')}
               className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
@@ -83,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
 
-          {APP_FEATURES.showCompleted && (
+          {features.showCompleted && (
             <button
               onClick={() => onTabChange('completed')}
               className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
@@ -97,21 +102,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
 
-          {APP_FEATURES.showExports && (
-            <button
-              onClick={() => onTabChange('search')}
-              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
-                activeTab === 'search'
-                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              <Search className="w-4 h-4 text-cyan-400" />
-              <span className="flex-1">Tra cứu xuất khuôn bảng</span>
-            </button>
-          )}
+          <button
+            onClick={() => onTabChange('search')}
+            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+              activeTab === 'search'
+                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+            }`}
+          >
+            <Search className="w-4 h-4 text-cyan-400" />
+            <span className="flex-1">Tra cứu xuất khuôn bảng</span>
+          </button>
 
-          {APP_FEATURES.showBulkScanner && (
+          {features.showBulkScanner && (
             <button
               onClick={() => onTabChange('bulk')}
               className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
@@ -124,6 +127,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="flex-1">Thêm hàng loạt</span>
             </button>
           )}
+
+          {/* Nút Cài đặt hiển thị Module trên Sidebar */}
+          <div className="pt-2 mt-2 border-t border-border/40">
+            <button
+              onClick={onOpenSettings}
+              className="w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 group"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <span className="flex-1">Cài đặt hiển thị</span>
+            </button>
+          </div>
         </nav>
       </div>
 
@@ -176,12 +190,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
           </div>
-          <Badge
-            variant={role === 'admin' ? 'indigo' : 'outline'}
-            className="text-[9px] px-1.5 py-0 uppercase font-mono tracking-wider h-4"
-          >
-            {role}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onOpenSettings}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+              title="Cài đặt hiển thị Module"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <Badge
+              variant={role === 'admin' ? 'indigo' : 'outline'}
+              className="text-[9px] px-1.5 py-0 uppercase font-mono tracking-wider h-4"
+            >
+              {role}
+            </Badge>
+          </div>
         </div>
       </div>
     </aside>

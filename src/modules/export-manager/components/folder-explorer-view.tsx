@@ -57,7 +57,10 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       const month = latestDate.slice(0, 7);
       return [year, month];
     }
-    return ['2026', '2026-10'];
+    const today = new Date().toISOString().slice(0, 10);
+    const year = today.slice(0, 4);
+    const month = today.slice(0, 7);
+    return [year, month];
   });
 
   // Tự động nhảy tới thư mục mục tiêu khi người dùng bấm "Mở thư mục" từ bảng

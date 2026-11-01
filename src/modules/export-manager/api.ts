@@ -2,135 +2,8 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import type { ExportRow, Database } from '../../types/database';
 import type { ExportItem, ExportFormData } from './types';
 
-// Dữ liệu mẫu phong phú mô phỏng thực tế xưởng sản xuất để preview ngay
-const FALLBACK_EXPORTS: ExportItem[] = [
-  {
-    id: 'exp-1',
-    type: 'board',
-    board_code: '13502-W1',
-    mold_code: 'VY-1078',
-    ref_kind: 'po',
-    ref_value: '22144368',
-    full_name: '13502-W1 VY-1078 H-3711 42633310 4 CUBE UNIT WHITE PO 22144368',
-    exported_at: '2026-10-15',
-    subfolder: 'bestway',
-    note: 'Xuất bảng chính cho xưởng hoàn thiện',
-    created_by: null,
-    created_at: new Date('2026-10-15T08:30:00Z').toISOString(),
-  },
-  {
-    id: 'exp-2',
-    type: 'mold',
-    board_code: '13502-W1',
-    mold_code: 'VY-1078',
-    ref_kind: 'po',
-    ref_value: '22144368',
-    full_name: '13502-W1 VY-1078 H-3711 PO 22144368',
-    exported_at: '2026-10-15',
-    subfolder: 'bestway',
-    note: 'Xuất khuôn ép nhiệt VY-1078',
-    created_by: null,
-    created_at: new Date('2026-10-15T09:00:00Z').toISOString(),
-  },
-  {
-    id: 'exp-3',
-    type: 'po',
-    board_code: '13502-W1',
-    mold_code: 'VY-1078',
-    ref_kind: 'po',
-    ref_value: '22144368',
-    full_name: '13502-W1 VY-1078 PO 22144368',
-    exported_at: '2026-10-15',
-    subfolder: 'chiều',
-    note: 'Lô hàng PO đợt ca chiều',
-    created_by: null,
-    created_at: new Date('2026-10-15T14:15:00Z').toISOString(),
-  },
-  {
-    id: 'exp-4',
-    type: 'board',
-    board_code: '14765-W4',
-    mold_code: 'VY-0104',
-    ref_kind: 'po',
-    ref_value: '2308200015',
-    full_name: '14765-W4 VY-0104 A-4732 2308200015',
-    exported_at: '2026-10-15',
-    subfolder: null, // Nằm trực tiếp trong thư mục ngày 10-15
-    note: 'Xuất trực tiếp trong thư mục ngày',
-    created_by: null,
-    created_at: new Date('2026-10-15T15:06:00Z').toISOString(),
-  },
-  {
-    id: 'exp-5',
-    type: 'po',
-    board_code: '13502-W1',
-    mold_code: 'VY-1078',
-    ref_kind: 'po',
-    ref_value: '22144390',
-    full_name: '13502-W1 VY-1078 PO 22144390',
-    exported_at: '2026-10-14',
-    subfolder: 'bestway',
-    note: 'Lô hàng PO đợt 2 bổ sung hôm qua',
-    created_by: null,
-    created_at: new Date('2026-10-14T10:00:00Z').toISOString(),
-  },
-  {
-    id: 'exp-6',
-    type: 'board',
-    board_code: '14200-A2',
-    mold_code: 'VX-2041',
-    ref_kind: 'po',
-    ref_value: '22155890',
-    full_name: '14200-A2 VX-2041 H-3890 PO 22155890',
-    exported_at: '2026-10-14',
-    subfolder: 'chiều',
-    note: 'Xuất bảng mẫu kiểm định chất lượng',
-    created_by: null,
-    created_at: new Date('2026-10-14T15:20:00Z').toISOString(),
-  },
-  {
-    id: 'exp-7',
-    type: 'mold',
-    board_code: '14200-A2',
-    mold_code: 'VX-2041',
-    ref_kind: 'po',
-    ref_value: '22155890',
-    full_name: '14200-A2 VX-2041 PO 22155890',
-    exported_at: '2026-10-13',
-    subfolder: 'bestway',
-    note: 'Khuôn VX-2041 đạt chuẩn',
-    created_by: null,
-    created_at: new Date('2026-10-13T11:00:00Z').toISOString(),
-  },
-  {
-    id: 'exp-8',
-    type: 'board',
-    board_code: '12800-B1',
-    mold_code: 'VL-0992',
-    ref_kind: 'po',
-    ref_value: '22099120',
-    full_name: '12800-B1 VL-0992 H-3650 PO 22099120',
-    exported_at: '2026-10-12',
-    subfolder: null,
-    note: 'Xuất xưởng hoàn tất',
-    created_by: null,
-    created_at: new Date('2026-10-12T09:30:00Z').toISOString(),
-  },
-  {
-    id: 'exp-9',
-    type: 'board',
-    board_code: '11900-C3',
-    mold_code: 'VY-0845',
-    ref_kind: 'po',
-    ref_value: '21980442',
-    full_name: '11900-C3 VY-0845 H-3510 PO 21980442',
-    exported_at: '2026-10-06',
-    subfolder: 'bestway',
-    note: 'Đơn hàng đầu tháng',
-    created_by: null,
-    created_at: new Date('2026-10-06T08:00:00Z').toISOString(),
-  },
-];
+// Dữ liệu mẫu ban đầu (để trống khi kết nối database thật)
+const FALLBACK_EXPORTS: ExportItem[] = [];
 
 let localExportsStore: ExportItem[] = [...FALLBACK_EXPORTS];
 
@@ -146,12 +19,12 @@ export async function fetchExportsApi(): Promise<ExportItem[]> {
       .order('exported_at', { ascending: false })
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
       console.warn('Chưa có bảng exports trên Supabase, dùng dữ liệu mẫu:', error?.message);
       return [...localExportsStore];
     }
 
-    return data as ExportItem[];
+    return (data || []) as ExportItem[];
   } catch (err) {
     console.error('Lỗi khi tải danh sách exports từ Supabase:', err);
     return [...localExportsStore];

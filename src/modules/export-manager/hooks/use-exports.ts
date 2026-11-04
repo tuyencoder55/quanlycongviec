@@ -3,7 +3,9 @@ import {
   fetchExportsApi,
   createExportApi,
   updateExportApi,
+  batchUpdateExportsApi,
   deleteExportApi,
+  batchDeleteExportsApi,
 } from '../api';
 import type { ExportItem, ExportFormData, ExportStats } from '../types';
 import type { ExportRow } from '../../../types/database';
@@ -36,9 +38,27 @@ export function useExports() {
     },
   });
 
+  const batchUpdateMutation = useMutation({
+    mutationFn: async ({ ids, updates }: { ids: string[]; updates: Partial<ExportRow> }) => {
+      return batchUpdateExportsApi(ids, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return deleteExportApi(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const batchDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      return batchDeleteExportsApi(ids);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -80,7 +100,9 @@ export function useExports() {
     refetch,
     createExport: createMutation.mutateAsync,
     updateExport: updateMutation.mutateAsync,
+    batchUpdateExports: batchUpdateMutation.mutateAsync,
     deleteExport: deleteMutation.mutateAsync,
+    batchDeleteExports: batchDeleteMutation.mutateAsync,
     checkIsExported,
   };
 }

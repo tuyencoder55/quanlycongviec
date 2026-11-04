@@ -269,17 +269,34 @@ export function matchScannedItemsWithSystem(
 
     // 3. Đưa ra đề xuất xuất xưởng thông minh
     let actionSuggest: 'export_po_only' | 'export_all' | 'already_exported_all' = 'export_all';
-    let actionLabel = 'Xuất mới (Bảng + Khuôn + PO)';
+    let actionLabel = 'Xuất mới (Bảng + PO)';
     let selectedToExport = true;
 
-    if (isPoAlreadyExported) {
+    if (poVal && isPoAlreadyExported) {
       actionSuggest = 'already_exported_all';
       actionLabel = 'Đã xuất PO này trước đó';
       selectedToExport = false; // Mặc định không tick nếu đã xuất rồi
+    } else if (!poVal && boardExportedDate) {
+      actionSuggest = 'already_exported_all';
+      actionLabel = 'Đã xuất Bảng này trước đó';
+      selectedToExport = false;
     } else if (boardExportedDate) {
-      // Bảng đã xuất trước đó, bây giờ chỉ xuất thêm PO
+      // Bảng đã xuất trước đó, bây giờ chỉ xuất thêm PO mới
       actionSuggest = 'export_po_only';
-      actionLabel = 'Chỉ xuất thêm PO mới (Bảng/Khuôn đã có)';
+      actionLabel = 'Chỉ xuất thêm PO mới (Bảng đã có)';
+      selectedToExport = true;
+    } else {
+      // Bảng chưa từng xuất -> Cần xuất Bảng + Khuôn + PO đầy đủ
+      actionSuggest = 'export_all';
+      if (item.ref_value && item.mold_code) {
+        actionLabel = 'Xuất mới (Bảng + Khuôn + PO)';
+      } else if (item.ref_value) {
+        actionLabel = 'Xuất mới (Bảng + PO)';
+      } else if (item.mold_code) {
+        actionLabel = 'Xuất mới (Bảng + Khuôn)';
+      } else {
+        actionLabel = 'Xuất mới (Bảng)';
+      }
       selectedToExport = true;
     }
 

@@ -99,6 +99,23 @@ export async function updateExportApi(id: string, updates: Partial<ExportRow>): 
   }
 }
 
+/**
+ * Cập nhật hàng loạt nhiều dòng xuất cùng lúc (ví dụ di chuyển thư mục hoặc đổi ngày)
+ */
+export async function batchUpdateExportsApi(ids: string[], updates: Partial<ExportRow>): Promise<void> {
+  if (ids.length === 0) return;
+  const idSet = new Set(ids);
+  localExportsStore = localExportsStore.map((e) => (idSet.has(e.id) ? { ...e, ...updates } : e));
+
+  if (!isSupabaseConfigured) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('exports') as any).update(updates).in('id', ids);
+  if (error) {
+    console.error('Lỗi cập nhật hàng loạt trên Supabase:', error);
+  }
+}
+
 export async function deleteExportApi(id: string): Promise<void> {
   localExportsStore = localExportsStore.filter((e) => e.id !== id);
 
@@ -107,5 +124,21 @@ export async function deleteExportApi(id: string): Promise<void> {
   const { error } = await supabase.from('exports').delete().eq('id', id);
   if (error) {
     console.error('Lỗi xóa dòng xuất trên Supabase:', error);
+  }
+}
+
+/**
+ * Xóa hàng loạt nhiều dòng xuất cùng lúc
+ */
+export async function batchDeleteExportsApi(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const idSet = new Set(ids);
+  localExportsStore = localExportsStore.filter((e) => !idSet.has(e.id));
+
+  if (!isSupabaseConfigured) return;
+
+  const { error } = await supabase.from('exports').delete().in('id', ids);
+  if (error) {
+    console.error('Lỗi xóa hàng loạt dòng xuất trên Supabase:', error);
   }
 }

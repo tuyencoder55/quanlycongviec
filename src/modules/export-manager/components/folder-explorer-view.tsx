@@ -1,9 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { ExportItem } from '../types';
 import { FolderItemCard } from './folder-item-card';
 import { FileItemCard } from './file-item-card';
 import { ImageUploadModal } from './image-upload-modal';
 import { ImageLightboxModal } from './image-lightbox-modal';
+import { MoveFilesModal } from './move-files-modal';
+import { useExports } from '../hooks/use-exports';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import {
@@ -17,14 +19,16 @@ import {
 import {
   Folder,
   FolderPlus,
+  FolderInput,
   ArrowLeft,
   ChevronRight,
   HardDrive,
   Plus,
   FileImage,
   FileText,
-  UploadCloud,
-  ImageIcon,
+  Trash2,
+  X,
+  ArrowDownToLine,
 } from 'lucide-react';
 
 interface FolderExplorerViewProps {
@@ -36,6 +40,7 @@ interface FolderExplorerViewProps {
   targetPath?: string[];
   highlightItemId?: string | null;
   revealTrigger?: number;
+  onPathChange?: (path: string[]) => void;
 }
 
 export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
@@ -47,7 +52,10 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   targetPath,
   highlightItemId,
   revealTrigger,
+  onPathChange,
 }) => {
+  const { batchUpdateExports, batchDeleteExports, refetch } = useExports();
+
   // Đường dẫn hiện tại: [] = Root, ['2026'], ['2026', '2026-10'], ['2026', '2026-10', '10-15'], ['2026', '2026-10', '10-15', 'bestway']
   const [currentPath, setCurrentPath] = useState<string[]>(() => {
     if (targetPath && targetPath.length > 0) return targetPath;
@@ -70,15 +78,43 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     }
   }, [targetPath, revealTrigger]);
 
+  // Thông báo thay đổi đường dẫn cho component cha (để AI scanner nắm được folder hiện tại)
+  useEffect(() => {
+    onPathChange?.(currentPath);
+  }, [currentPath, onPathChange]);
+
+  // Danh sách các file được chọn (checkbox / quét chuột)
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  // Khi chuyển thư mục thì xóa danh sách đã chọn
+  useEffect(() => {
+    setSelectedFileIds([]);
+  }, [currentPath]);
+
   // Modal tạo thư mục mới
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+
+  // Modal di chuyển file
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+
+  // Kéo file vào Thư mục gốc khi đang ở trong thư mục con
+  const [isOverRootDrop, setIsOverRootDrop] = useState(false);
 
   // Modal tải & nén ảnh
   const [isImageUploadOpen, setIsImageUploadOpen] = useState(false);
 
   // Modal xem ảnh phóng to toàn màn hình (Lightbox)
   const [viewingImage, setViewingImage] = useState<ExportItem | null>(null);
+
+  // Quét chuột chọn nhiều file (Marquee / Rubber-band selection như trên PC)
+  const [selectionBox, setSelectionBox] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const isMouseDownRef = useRef<boolean>(false);
+  const fileListContainerRef = useRef<HTMLDivElement>(null);
 
   // Lưu trữ các thư mục người dùng tự tạo trên trình duyệt (giữ lại kể cả khi F5)
   const [customYears, setCustomYears] = useState<string[]>(() => {
@@ -145,10 +181,22 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     };
   }, []);
 
+  // Lắng nghe mouseup toàn cục để kết thúc quét chuột
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isMouseDownRef.current) {
+        isMouseDownRef.current = false;
+        setSelectionBox(null);
+      }
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
   // Bắt sự kiện dán ảnh trực tiếp từ clipboard (Ctrl + V) trên trang Explorer
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (isNewFolderOpen || isImageUploadOpen || viewingImage) return;
+      if (isNewFolderOpen || isImageUploadOpen || viewingImage || isMoveModalOpen) return;
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -162,7 +210,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [isNewFolderOpen, isImageUploadOpen, viewingImage]);
+  }, [isNewFolderOpen, isImageUploadOpen, viewingImage, isMoveModalOpen]);
 
   // Bắt sự kiện chuột phải trên toàn bộ vùng Explorer
   const handleContainerContextMenu = (e: React.MouseEvent) => {
@@ -183,7 +231,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   const currentDay = currentPath[2];
   const currentSubfolder = currentPath[3];
 
-  // Danh sách các năm có trong dữ liệu + năm người dùng tự tạo (sắp xếp Năm mới nhất lên trước)
+  // Danh sách các năm có trong dữ liệu + năm người dùng tự tạo
   const availableYears = useMemo(() => {
     const set = new Set<string>();
     customYears.forEach((y) => set.add(y));
@@ -197,7 +245,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [items, customYears]);
 
-  // Danh sách các tháng trong năm được chọn + tháng tự tạo (sắp xếp Tháng mới nhất lên trước: 12 -> 01)
+  // Danh sách các tháng trong năm được chọn + tháng tự tạo
   const availableMonths = useMemo(() => {
     if (!currentYear) return [];
     const set = new Set<string>();
@@ -208,14 +256,14 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       if (item.exported_at) {
         const d = item.exported_at.replace(/\//g, '-').slice(0, 10);
         if (d.startsWith(currentYear) && d.length >= 7) {
-          set.add(d.slice(0, 7)); // Định dạng chuẩn YYYY-MM
+          set.add(d.slice(0, 7));
         }
       }
     });
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [items, currentYear, customMonths]);
 
-  // Danh sách các ngày trong tháng được chọn + ngày tự tạo (sắp xếp Ngày mới nhất lên trước: 31 -> 01)
+  // Danh sách các ngày trong tháng được chọn + ngày tự tạo
   const availableDays = useMemo(() => {
     if (!currentMonth) return [];
     const map = new Map<string, number>();
@@ -230,7 +278,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       if (item.exported_at) {
         const d = item.exported_at.replace(/\//g, '-').slice(0, 10);
         if (d.startsWith(currentMonth) && d.length >= 10) {
-          const dayTag = d.slice(5, 10); // Định dạng chuẩn MM-DD (ví dụ: 10-27)
+          const dayTag = d.slice(5, 10);
           map.set(dayTag, (map.get(dayTag) || 0) + 1);
         }
       }
@@ -321,7 +369,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     const rawName = newFolderName.trim();
     if (!rawName) return;
 
-    // CẤP 0: Tạo Năm mới
     if (level === 0) {
       const yearStr = rawName.slice(0, 4);
       if (!customYears.includes(yearStr)) {
@@ -335,7 +382,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       return;
     }
 
-    // CẤP 1: Tạo Tháng mới
     if (level === 1) {
       let monthStr = rawName;
       if (!monthStr.includes('-')) {
@@ -353,7 +399,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       return;
     }
 
-    // CẤP 2: Tạo Ngày mới
     if (level === 2) {
       let dayStr = rawName;
       if (dayStr.length <= 2) {
@@ -371,7 +416,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
       return;
     }
 
-    // CẤP 3: Tạo Thư mục con
     if (level >= 3) {
       if (!customFolders.includes(rawName)) {
         const updated = [...customFolders, rawName];
@@ -446,6 +490,184 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     () => subfolderFiles.filter((f) => f.type === 'image' || Boolean(f.image_url)),
     [subfolderFiles]
   );
+
+  // Danh sách file PDF đang hiển thị ở màn hình hiện tại
+  const currentPdfs = level === 4 ? subfolderPdfs : dayPdfs;
+
+  // Xử lý chọn/bỏ chọn từng file (hỗ trợ Shift+Click dải file)
+  const handleToggleSelectFile = (id: string, shiftKey: boolean, currentList: ExportItem[]) => {
+    if (shiftKey && selectedFileIds.length > 0) {
+      const lastSelectedId = selectedFileIds[selectedFileIds.length - 1];
+      const lastIndex = currentList.findIndex((f) => f.id === lastSelectedId);
+      const currentIndex = currentList.findIndex((f) => f.id === id);
+      if (lastIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(lastIndex, currentIndex);
+        const end = Math.max(lastIndex, currentIndex);
+        const rangeIds = currentList.slice(start, end + 1).map((f) => f.id);
+        setSelectedFileIds((prev) => Array.from(new Set([...prev, ...rangeIds])));
+        return;
+      }
+    }
+
+    setSelectedFileIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // Chọn tất cả / Bỏ chọn tất cả file ở view hiện tại
+  const handleSelectAllFiles = (files: ExportItem[]) => {
+    const allIds = files.map((f) => f.id);
+    const isAllSelected = allIds.length > 0 && allIds.every((id) => selectedFileIds.includes(id));
+    if (isAllSelected) {
+      setSelectedFileIds([]);
+    } else {
+      setSelectedFileIds(allIds);
+    }
+  };
+
+  // ==========================================
+  // XỬ LÝ KÉO THẢ CHUỘT (HTML5 DRAG AND DROP)
+  // ==========================================
+
+  // Bắt đầu kéo 1 file hoặc nhóm file đã chọn
+  const handleDragStartItem = (e: React.DragEvent, item: ExportItem) => {
+    let idsToDrag = selectedFileIds;
+    if (!selectedFileIds.includes(item.id)) {
+      idsToDrag = [item.id];
+      setSelectedFileIds([item.id]);
+    }
+    e.dataTransfer.setData('application/json', JSON.stringify(idsToDrag));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  // Thả file vào một thẻ Thư mục con hoặc Thư mục Ngày
+  const handleDropFilesOnFolder = async (
+    droppedIds: string[],
+    targetName: string,
+    targetType: 'year' | 'month' | 'day' | 'subfolder'
+  ) => {
+    if (droppedIds.length === 0) return;
+
+    try {
+      if (targetType === 'subfolder') {
+        const fullDate = `${currentMonth?.slice(0, 4)}-${currentDay}`;
+        await batchUpdateExports({
+          ids: droppedIds,
+          updates: {
+            exported_at: fullDate,
+            subfolder: targetName,
+          },
+        });
+      } else if (targetType === 'day') {
+        const fullDate = `${currentYear}-${targetName}`;
+        await batchUpdateExports({
+          ids: droppedIds,
+          updates: {
+            exported_at: fullDate,
+            subfolder: null,
+          },
+        });
+      }
+
+      await refetch();
+      setSelectedFileIds([]);
+    } catch (err) {
+      console.error('Lỗi khi thả file vào thư mục:', err);
+    }
+  };
+
+  // Xác nhận di chuyển qua Hộp thoại MoveFilesModal
+  const handleConfirmMoveModal = async (targetDate: string, targetSubfolder: string | null) => {
+    if (selectedFileIds.length === 0) return;
+
+    await batchUpdateExports({
+      ids: selectedFileIds,
+      updates: {
+        exported_at: targetDate,
+        subfolder: targetSubfolder,
+      },
+    });
+
+    if (targetSubfolder && !customFolders.includes(targetSubfolder)) {
+      const updated = [...customFolders, targetSubfolder];
+      setCustomFolders(updated);
+      localStorage.setItem('nexus_custom_folders', JSON.stringify(updated));
+    }
+
+    await refetch();
+    setSelectedFileIds([]);
+  };
+
+  // Xóa hàng loạt file đã chọn
+  const handleBatchDelete = async () => {
+    if (!isAdmin || selectedFileIds.length === 0) return;
+    if (window.confirm(`Anh có chắc chắn muốn xóa vĩnh viễn ${selectedFileIds.length} file đã chọn không?`)) {
+      await batchDeleteExports(selectedFileIds);
+      await refetch();
+      setSelectedFileIds([]);
+    }
+  };
+
+  // ==========================================
+  // XỬ LÝ QUÉT CHUỘT VẼ KHUNG CHỌN (MARQUEE)
+  // ==========================================
+  const handleContainerMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Chỉ nhận chuột trái
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('a') ||
+      target.closest('[data-file-id]') ||
+      target.closest('[role="dialog"]')
+    ) {
+      return;
+    }
+
+    isMouseDownRef.current = true;
+    setSelectionBox({
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+    });
+  };
+
+  const handleContainerMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDownRef.current || !selectionBox) return;
+
+    setSelectionBox((prev) => (prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null));
+
+    const boxLeft = Math.min(selectionBox.startX, e.clientX);
+    const boxRight = Math.max(selectionBox.startX, e.clientX);
+    const boxTop = Math.min(selectionBox.startY, e.clientY);
+    const boxBottom = Math.max(selectionBox.startY, e.clientY);
+
+    if (fileListContainerRef.current) {
+      const fileElements = fileListContainerRef.current.querySelectorAll('[data-file-id]');
+      const newlySelected: string[] = [];
+
+      fileElements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        // Kiểm tra va chạm giao nhau giữa khung chữ nhật quét và thẻ file
+        const isIntersecting = !(
+          rect.right < boxLeft ||
+          rect.left > boxRight ||
+          rect.bottom < boxTop ||
+          rect.top > boxBottom
+        );
+
+        const fileId = el.getAttribute('data-file-id');
+        if (isIntersecting && fileId) {
+          newlySelected.push(fileId);
+        }
+      });
+
+      if (newlySelected.length > 0) {
+        setSelectedFileIds((prev) => Array.from(new Set([...prev, ...newlySelected])));
+      }
+    }
+  };
 
   return (
     <div
@@ -546,10 +768,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         </div>
       </div>
 
-      {/* VÙNG NỘI DUNG THƯ MỤC / DANH SÁCH FILE */}
+      {/* VÙNG NỘI DUNG THƯ MỤC / DANH SÁCH FILE CÓ HỖ TRỢ QUÉT CHUỘT VẼ KHUNG */}
       <div
+        ref={fileListContainerRef}
+        onMouseDown={handleContainerMouseDown}
+        onMouseMove={handleContainerMouseMove}
         onContextMenu={handleContainerContextMenu}
-        className="flex-1 min-h-0 overflow-y-auto p-3 rounded-xl border border-border/50 bg-card/20 space-y-4"
+        className="flex-1 min-h-0 overflow-y-auto p-3 rounded-xl border border-border/50 bg-card/20 space-y-4 relative"
       >
         {/* CẤP 0: DANH SÁCH CÁC NĂM (GỐC) */}
         {level === 0 && (
@@ -680,6 +905,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                   type="day"
                   itemCount={count}
                   onClick={() => setCurrentPath([currentYear, currentMonth, dayTag])}
+                  onDropFiles={handleDropFilesOnFolder}
                 />
               ))}
             </div>
@@ -689,12 +915,12 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         {/* CẤP 3: BÊN TRONG THƯ MỤC NGÀY (GỒM THƯ MỤC CON, FILE PDF VÀ HÌNH ẢNH) */}
         {level === 3 && (
           <div className="space-y-5">
-            {/* 1. Nhóm thư mục con (ví dụ: bestway, chiều...) */}
+            {/* 1. Nhóm thư mục con (ví dụ: bestway, chiều, PO...) - Đóng vai trò Drop Target */}
             <div className="space-y-2">
               <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
                 <span>Thư Mục Con (Ngày {currentDay}) • 子目录</span>
                 <span className="text-[10px] text-muted-foreground font-normal">
-                  (Chuột phải vào vùng trống để tạo thư mục mới)
+                  (Nắm file kéo thả trực tiếp vào ô thư mục bên dưới)
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -727,6 +953,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                     onClick={() =>
                       setCurrentPath([currentYear, currentMonth, currentDay, name])
                     }
+                    onDropFiles={handleDropFilesOnFolder}
                   />
                 ))}
               </div>
@@ -750,6 +977,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       key={file.id}
                       item={file}
                       isAdmin={isAdmin}
+                      isSelected={selectedFileIds.includes(file.id)}
+                      onToggleSelect={(id, shiftKey) =>
+                        handleToggleSelectFile(id, shiftKey, dayContents.directFiles)
+                      }
+                      onDragStartItem={handleDragStartItem}
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
@@ -763,13 +995,30 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             {/* 3. Nhóm file xuất PDF trực tiếp nằm ở thư mục ngày */}
             <div className="space-y-2 pt-1">
               <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-rose-400" />
                   <span>File Xuất PDF (Ngày {currentDay}) • PDF 文件</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/80 font-normal">
-                  {dayPdfs.length} file
-                </span>
+
+                <div className="flex items-center gap-3">
+                  {dayPdfs.length > 0 && (
+                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground text-[11px] normal-case select-none">
+                      <input
+                        type="checkbox"
+                        checked={
+                          dayPdfs.length > 0 &&
+                          dayPdfs.every((p) => selectedFileIds.includes(p.id))
+                        }
+                        onChange={() => handleSelectAllFiles(dayPdfs)}
+                        className="w-3.5 h-3.5 rounded border-border text-primary cursor-pointer accent-primary"
+                      />
+                      <span>Chọn tất cả ({dayPdfs.length})</span>
+                    </label>
+                  )}
+                  <span className="text-[10px] text-muted-foreground/80 font-normal">
+                    {dayPdfs.length} file
+                  </span>
+                </div>
               </div>
 
               {dayPdfs.length === 0 && dayImages.length === 0 && dayContents.subfolders.length === 0 ? (
@@ -807,6 +1056,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       key={file.id}
                       item={file}
                       isAdmin={isAdmin}
+                      isSelected={selectedFileIds.includes(file.id)}
+                      onToggleSelect={(id, shiftKey) =>
+                        handleToggleSelectFile(id, shiftKey, dayPdfs)
+                      }
+                      onDragStartItem={handleDragStartItem}
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
@@ -820,9 +1074,49 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </div>
         )}
 
-        {/* CẤP 4: BÊN TRONG THƯ MỤC CON (VÍ DỤ TRONG bestway HOẶC chiều) */}
+        {/* CẤP 4: BÊN TRONG THƯ MỤC CON (VÍ DỤ TRONG bestway HOẶC PO) */}
         {level === 4 && (
           <div className="space-y-4">
+            {/* Khu vực Drop Target thả chuột để di chuyển ngược ra ngoài Thư mục gốc ngày */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setIsOverRootDrop(true);
+              }}
+              onDragLeave={() => setIsOverRootDrop(false)}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setIsOverRootDrop(false);
+                const raw = e.dataTransfer.getData('application/json');
+                if (raw) {
+                  try {
+                    const ids = JSON.parse(raw);
+                    if (Array.isArray(ids) && ids.length > 0) {
+                      const fullDate = `${currentMonth.slice(0, 4)}-${currentDay}`;
+                      await handleConfirmMoveModal(fullDate, null);
+                    }
+                  } catch {}
+                }
+              }}
+              onClick={() => setCurrentPath([currentYear, currentMonth, currentDay])}
+              className={`p-3 rounded-xl border border-dashed transition-all flex items-center justify-between text-xs cursor-pointer select-none ${
+                isOverRootDrop
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300 ring-2 ring-emerald-500/60 shadow-lg scale-[1.01]'
+                  : 'border-border/70 bg-card/40 text-muted-foreground hover:bg-card hover:border-amber-500/40 hover:text-foreground'
+              }`}
+              title="Nhấp để quay ra hoặc kéo file thả vào đây để đưa ra ngoài Thư mục gốc ngày"
+            >
+              <div className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4 text-amber-400" />
+                <span className="font-medium">Thư Mục Gốc Ngày {currentDay}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+                <ArrowDownToLine className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Kéo thả file vào đây để đưa ra ngoài thư mục gốc</span>
+              </div>
+            </div>
+
             {/* Hình ảnh trong thư mục con */}
             {subfolderImages.length > 0 && (
               <div className="space-y-2">
@@ -841,6 +1135,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       key={file.id}
                       item={file}
                       isAdmin={isAdmin}
+                      isSelected={selectedFileIds.includes(file.id)}
+                      onToggleSelect={(id, shiftKey) =>
+                        handleToggleSelectFile(id, shiftKey, subfolderFiles)
+                      }
+                      onDragStartItem={handleDragStartItem}
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
@@ -859,9 +1158,26 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                   <FileText className="w-3.5 h-3.5 text-rose-400" />
                   <span>Danh Sách File Xuất Trong Thư Mục "{currentSubfolder}"</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/80 font-normal">
-                  {subfolderPdfs.length} file
-                </span>
+
+                <div className="flex items-center gap-3">
+                  {subfolderPdfs.length > 0 && (
+                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground text-[11px] normal-case select-none">
+                      <input
+                        type="checkbox"
+                        checked={
+                          subfolderPdfs.length > 0 &&
+                          subfolderPdfs.every((p) => selectedFileIds.includes(p.id))
+                        }
+                        onChange={() => handleSelectAllFiles(subfolderPdfs)}
+                        className="w-3.5 h-3.5 rounded border-border text-primary cursor-pointer accent-primary"
+                      />
+                      <span>Chọn tất cả ({subfolderPdfs.length})</span>
+                    </label>
+                  )}
+                  <span className="text-[10px] text-muted-foreground/80 font-normal">
+                    {subfolderPdfs.length} file
+                  </span>
+                </div>
               </div>
 
               {subfolderPdfs.length === 0 && subfolderImages.length === 0 ? (
@@ -899,9 +1215,15 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       key={file.id}
                       item={file}
                       isAdmin={isAdmin}
+                      isSelected={selectedFileIds.includes(file.id)}
+                      onToggleSelect={(id, shiftKey) =>
+                        handleToggleSelectFile(id, shiftKey, subfolderPdfs)
+                      }
+                      onDragStartItem={handleDragStartItem}
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
+                      onAttachImage={(item) => onEdit?.(item)}
                       isHighlighted={file.id === highlightItemId}
                     />
                   ))}
@@ -911,6 +1233,66 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* KHUNG QUÉT CHỮ NHẬT MARQUEE KHI KÉO CHUỘT (PHONG CÁCH PC) */}
+      {selectionBox && (
+        <div
+          className="fixed border-2 border-primary/70 bg-primary/20 pointer-events-none rounded z-50 shadow-sm backdrop-blur-[1px]"
+          style={{
+            left: Math.min(selectionBox.startX, selectionBox.currentX),
+            top: Math.min(selectionBox.startY, selectionBox.currentY),
+            width: Math.abs(selectionBox.currentX - selectionBox.startX),
+            height: Math.abs(selectionBox.currentY - selectionBox.startY),
+          }}
+        />
+      )}
+
+      {/* THANH CÔNG CỤ THAO TÁC HÀNG LOẠT (BATCH ACTION BAR NỔI DƯỚI ĐÁY) */}
+      {selectedFileIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card/95 border border-primary/40 shadow-2xl backdrop-blur-xl px-4 py-2.5 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 text-xs select-none">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="font-semibold text-foreground">
+              Đã chọn <strong className="text-primary font-mono">{selectedFileIds.length}</strong> file
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-border/60 mx-1" />
+
+          {isAdmin && (
+            <Button
+              size="sm"
+              onClick={() => setIsMoveModalOpen(true)}
+              className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-xs px-3"
+            >
+              <FolderInput className="w-3.5 h-3.5" />
+              <span>Di chuyển tới...</span>
+            </Button>
+          )}
+
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchDelete}
+              className="h-8 text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10 rounded-xl gap-1 px-3"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa</span>
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedFileIds([])}
+            className="h-8 text-xs text-muted-foreground hover:text-foreground rounded-xl px-2.5 gap-1"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Bỏ chọn</span>
+          </Button>
+        </div>
+      )}
 
       {/* MENU NGỮ CẢNH CHUỘT PHẢI (CONTEXT MENU NHƯ DESKTOP WINDOWS) */}
       {contextMenu.isOpen && (
@@ -1055,6 +1437,21 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL DI CHUYỂN NHIỀU FILE (MOVE FILES MODAL) */}
+      <MoveFilesModal
+        isOpen={isMoveModalOpen}
+        onOpenChange={setIsMoveModalOpen}
+        selectedCount={selectedFileIds.length}
+        currentDate={
+          currentMonth && currentDay
+            ? `${currentMonth.slice(0, 4)}-${currentDay}`
+            : new Date().toISOString().split('T')[0]
+        }
+        currentSubfolder={currentSubfolder}
+        availableSubfolders={dayContents.subfolders.map((s) => s.name)}
+        onConfirmMove={handleConfirmMoveModal}
+      />
 
       {/* MODAL TẢI ẢNH VÀ NÉN TỰ ĐỘNG WEBP */}
       <ImageUploadModal

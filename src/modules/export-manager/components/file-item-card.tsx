@@ -11,14 +11,17 @@ import {
   Edit2,
   Trash2,
   Calendar,
-  Maximize2,
   Eye,
   Paperclip,
+  GripVertical,
 } from 'lucide-react';
 
 interface FileItemCardProps {
   item: ExportItem;
   isAdmin: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string, shiftKey: boolean) => void;
+  onDragStartItem?: (e: React.DragEvent, item: ExportItem) => void;
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
   onViewImage?: (item: ExportItem) => void;
@@ -29,6 +32,9 @@ interface FileItemCardProps {
 export const FileItemCard: React.FC<FileItemCardProps> = ({
   item,
   isAdmin,
+  isSelected = false,
+  onToggleSelect,
+  onDragStartItem,
   onEdit,
   onDelete,
   onViewImage,
@@ -56,23 +62,67 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Nếu click vào checkbox hoặc nút thì bỏ qua
+    if (onToggleSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+      e.stopPropagation();
+      onToggleSelect(item.id, e.shiftKey);
+      return;
+    }
+
     if (hasImage && onViewImage) {
       onViewImage(item);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (onDragStartItem) {
+      onDragStartItem(e, item);
     }
   };
 
   return (
     <div
       ref={cardRef}
+      data-file-id={item.id}
+      draggable={true}
+      onDragStart={handleDragStart}
       onClick={handleCardClick}
-      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing select-none ${
         isHighlighted
           ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/70 shadow-lg shadow-amber-500/10 animate-in fade-in'
+          : isSelected
+          ? 'border-primary bg-primary/10 ring-1 ring-primary/40 shadow-xs'
           : 'border-border/60 bg-card/30 hover:bg-card hover:border-border'
-      } ${hasImage ? 'cursor-pointer hover:border-emerald-500/40 hover:shadow-xs' : ''}`}
+      } ${hasImage ? 'hover:border-emerald-500/40 hover:shadow-xs' : ''}`}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* CHECKBOX CHỌN FILE VÀ TAY CẦM KÉO THẢ */}
+        <div
+          className="flex items-center gap-1.5 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                const nativeEvent = e.nativeEvent as MouseEvent;
+                onToggleSelect(item.id, Boolean(nativeEvent?.shiftKey));
+              }}
+              className="w-4 h-4 rounded border-border text-primary cursor-pointer focus:ring-1 focus:ring-primary accent-primary"
+              title="Chọn file này"
+            />
+          )}
+
+          <div
+            className="text-muted-foreground/40 group-hover:text-muted-foreground/80 cursor-grab"
+            title="Nắm kéo file thả vào thư mục"
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </div>
+        </div>
+
         {/* ICON HOẶC THUMBNAIL ĐƠN XUẤT */}
         {hasImage && item.image_url && !imageError ? (
           <div
@@ -114,7 +164,9 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
-              className="text-xs font-semibold text-foreground font-mono truncate max-w-[280px] sm:max-w-md block group-hover:text-primary transition-colors"
+              className={`text-xs font-semibold font-mono truncate max-w-[280px] sm:max-w-md block transition-colors ${
+                isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              }`}
               title={item.full_name}
             >
               {item.full_name}

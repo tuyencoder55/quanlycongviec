@@ -54,6 +54,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
     date?: string;
   }>({});
 
+  // Đường dẫn hiện tại trong cây thư mục
+  const [currentExplorerPath, setCurrentExplorerPath] = useState<string[]>([]);
+
   // Chế độ xem: Cây thư mục (folder) hoặc Bảng phẳng (table)
   const [viewMode, setViewMode] = useState<ExportViewMode>(() => {
     if (typeof window !== 'undefined') {
@@ -174,29 +177,35 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
 
   const handleDelete = async (id: string) => {
     if (!isAdmin) return;
-    if (window.confirm('Anh có chắc muốn xóa dòng xuất khuôn bảng này khỏi database không?')) {
+    if (confirm('Bạn có chắc chắn muốn xóa bản ghi xuất này không?')) {
       await deleteExport(id);
     }
   };
 
-  const handleSave = async (formData: ExportFormData, id?: string) => {
-    if (id) {
-      await updateExport({ id, updates: formData });
-      // Tự động điều hướng Cây thư mục đến đúng folder Năm > Tháng > Ngày của file vừa cập nhật
-      const rawDate = formData.exported_at || new Date().toISOString().split('T')[0];
-      const dateStr = rawDate.replace(/\//g, '-').slice(0, 10);
-      const year = dateStr.slice(0, 4);
-      const month = dateStr.slice(0, 7);
-      const day = dateStr.slice(5, 10);
-      const subfolder = formData.subfolder ? formData.subfolder.trim() : '';
-      const path = subfolder ? [year, month, day, subfolder] : [year, month, day];
-      setFolderNavigation({
-        path,
-        highlightItemId: id,
-        trigger: Date.now(),
+  const handleSave = async (formData: ExportFormData) => {
+    if (selectedItem) {
+      // Sửa
+      await updateExport({
+        id: selectedItem.id,
+        updates: {
+          type: formData.type,
+          board_code: formData.board_code,
+          mold_code: formData.mold_code || null,
+          ref_kind: formData.ref_kind || null,
+          ref_value: formData.ref_value || null,
+          full_name: formData.full_name,
+          exported_at: formData.exported_at,
+          subfolder: formData.subfolder || null,
+          image_url: formData.image_url || null,
+          file_size_bytes: formData.file_size_bytes || null,
+          is_legacy: formData.is_legacy ?? false,
+          note: formData.note || null,
+        },
       });
-      handleViewModeChange('folder');
+      setIsDialogOpen(false);
+      setSelectedItem(null);
     } else {
+      // Tạo mới
       const newItem = await createExport(formData);
       // Tự động mở đúng folder Năm > Tháng > Ngày và highlight sáng viền vàng file vừa tạo
       if (newItem) {
@@ -278,23 +287,23 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
 
       return [
         idx + 1,
-        item.board_code,
-        item.mold_code || '',
-        item.ref_value ? (item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value) : '',
-        item.subfolder || '',
-        boardDate,
-        moldDate,
-        poDate,
+        `"${item.board_code}"`,
+        `"${item.mold_code || ''}"`,
+        `"${item.ref_value ? (item.ref_kind === 'po' ? 'PO ' + item.ref_value : item.ref_value) : ''}"`,
+        `"${item.subfolder || ''}"`,
+        `"${boardDate}"`,
+        `"${moldDate}"`,
+        `"${poDate}"`,
         `"${item.full_name.replace(/"/g, '""')}"`,
-      ];
+      ].join(',');
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `xuat_khuon_bang_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `xuat_khuon_bang_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -406,9 +415,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(t.id as ExportTypeFilter)}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                   typeFilter === t.id
-                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    ? 'bg-foreground text-background shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -487,6 +496,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             targetPath={folderNavigation?.path}
             highlightItemId={folderNavigation?.highlightItemId}
             revealTrigger={folderNavigation?.trigger}
+            onPathChange={setCurrentExplorerPath}
           />
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
@@ -519,6 +529,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         onOpenChange={setIsAiScannerOpen}
         isAdmin={isAdmin}
         onSuccess={refetch}
+        defaultDate={
+          currentExplorerPath[1] && currentExplorerPath[2]
+            ? `${currentExplorerPath[1].slice(0, 4)}-${currentExplorerPath[2]}`
+            : undefined
+        }
+        defaultSubfolder={currentExplorerPath[3] || undefined}
       />
     </div>
   );

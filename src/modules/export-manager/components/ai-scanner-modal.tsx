@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,9 +16,7 @@ import {
   RefreshCw,
   Calendar,
   ArrowRight,
-  Check,
   Key,
-  ExternalLink,
   Folder,
 } from 'lucide-react';
 import {
@@ -38,6 +36,9 @@ interface AiScannerModalProps {
   onOpenChange: (open: boolean) => void;
   isAdmin: boolean;
   onSuccess?: () => void;
+  defaultDate?: string;
+  defaultSubfolder?: string;
+  availableSubfolders?: string[];
 }
 
 export const AiScannerModal: React.FC<AiScannerModalProps> = ({
@@ -45,6 +46,9 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   onOpenChange,
   isAdmin,
   onSuccess,
+  defaultDate,
+  defaultSubfolder,
+  availableSubfolders = [],
 }) => {
   const { exportsList, createExport, refetch: refetchExports } = useExports();
   const { columns, updateTask, refetch: refetchKanban } = useKanban();
@@ -57,8 +61,9 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [matchedItems, setMatchedItems] = useState<MatchedScannedItem[]>([]);
-  const [exportDate, setExportDate] = useState(new Date().toISOString().split('T')[0]);
-  const [subfolder, setSubfolder] = useState('');
+  const [exportDate, setExportDate] = useState<string>(() => defaultDate || new Date().toISOString().split('T')[0]);
+  const [subfolder, setSubfolder] = useState<string>(() => defaultSubfolder || '');
+  const [isCustomSubfolder, setIsCustomSubfolder] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoCompleteTasks, setAutoCompleteTasks] = useState(true);
 
@@ -69,9 +74,14 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cập nhật key mỗi khi mở modal
+  // Cập nhật ngày và thư mục mặc định khi mở modal
   useEffect(() => {
     if (isOpen) {
+      if (defaultDate) setExportDate(defaultDate);
+      if (defaultSubfolder !== undefined) {
+        setSubfolder(defaultSubfolder);
+        setIsCustomSubfolder(false);
+      }
       const saved = getGeminiApiKey();
       setCurrentKey(saved);
       setApiKeyInput(saved);
@@ -79,7 +89,23 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
         setShowKeyConfig(true);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, defaultDate, defaultSubfolder]);
+
+  // Gom danh sách các thư mục con có sẵn trong ngày
+  const subfolderOptions = useMemo(() => {
+    const set = new Set<string>();
+    availableSubfolders.forEach((f) => {
+      if (f && f.trim()) set.add(f.trim());
+    });
+    exportsList.forEach((e) => {
+      const d = (e.exported_at || '').replace(/\//g, '-').slice(0, 10);
+      if (d === exportDate && e.subfolder?.trim()) {
+        set.add(e.subfolder.trim());
+      }
+    });
+    if (defaultSubfolder?.trim()) set.add(defaultSubfolder.trim());
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [availableSubfolders, exportsList, exportDate, defaultSubfolder]);
 
   // Lắng nghe phím Ctrl + V dán ảnh
   useEffect(() => {
@@ -191,18 +217,49 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
     );
   };
 
-  // Xác nhận xuất vào Xuất Khuôn Bảng
+  // Xác nhận xuất vào Xuất Khuôn Bảng: Điền đầy đủ cả Bảng + Khuôn + PO theo đúng trạng thái
   const handleConfirmExport = async () => {
     if (!isAdmin) return;
     const selected = matchedItems.filter((item) => item.selectedToExport);
     if (selected.length === 0) return;
 
     setIsSubmitting(true);
+    const targetSubfolder = subfolder.trim() || undefined;
+
     try {
       for (const item of selected) {
-          // 1. Tạo dòng xuất tương ứng
-        if (item.actionSuggest === 'export_po_only' || item.ref_value) {
-          // Bảng đã có trước đó, chỉ xuất thêm PO
+        const isBoardExported = Boolean(item.boardExportedDate);
+        const isMoldExported = Boolean(item.moldExportedDate);
+        const isPoExported = Boolean(item.poExportedDate);
+
+        // 1. TẠO DÒNG BẢNG (nếu Bảng chưa từng xuất trước đó)
+        if (!isBoardExported) {
+          await createExport({
+            type: 'board',
+            board_code: item.board_code,
+            mold_code: item.mold_code,
+            full_name: item.full_name,
+            exported_at: exportDate,
+            subfolder: targetSubfolder,
+            note: 'Xuất bảng từ AI Scanner',
+          });
+        }
+
+        // 2. TẠO DÒNG KHUÔN (nếu có mã khuôn và Khuôn chưa từng xuất trước đó)
+        if (item.mold_code && !isMoldExported) {
+          await createExport({
+            type: 'mold',
+            board_code: item.board_code,
+            mold_code: item.mold_code,
+            full_name: item.full_name,
+            exported_at: exportDate,
+            subfolder: targetSubfolder,
+            note: 'Xuất khuôn từ AI Scanner',
+          });
+        }
+
+        // 3. TẠO DÒNG PO (nếu có số PO/ngày và PO này chưa từng xuất trước đó)
+        if (item.ref_value && !isPoExported) {
           await createExport({
             type: 'po',
             board_code: item.board_code,
@@ -211,36 +268,12 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
             ref_value: item.ref_value,
             full_name: item.full_name,
             exported_at: exportDate,
-            subfolder: subfolder.trim() || undefined,
-            note: item.actionLabel,
+            subfolder: targetSubfolder,
+            note: 'Xuất PO từ AI Scanner',
           });
-        } else {
-          // Xuất mới Bảng
-          await createExport({
-            type: 'board',
-            board_code: item.board_code,
-            mold_code: item.mold_code,
-            full_name: item.full_name,
-            exported_at: exportDate,
-            subfolder: subfolder.trim() || undefined,
-            note: 'Xuất bảng từ AI Scanner',
-          });
-
-          // Xuất mới Khuôn nếu có mã khuôn
-          if (item.mold_code) {
-            await createExport({
-              type: 'mold',
-              board_code: item.board_code,
-              mold_code: item.mold_code,
-              full_name: item.full_name,
-              exported_at: exportDate,
-              subfolder: subfolder.trim() || undefined,
-              note: 'Xuất khuôn từ AI Scanner',
-            });
-          }
         }
 
-        // 2. Tự động tick hoàn thành thẻ trên Kanban nếu được chọn
+        // 4. Tự động tick hoàn thành thẻ trên Kanban nếu được chọn
         if (autoCompleteTasks && item.matchedTask && !item.matchedTask.done) {
           const doneCol = columns.find((c) => c.title.toLowerCase().includes('xong'));
           await updateTask({
@@ -271,7 +304,6 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
     setRawImageData(null);
     setMatchedItems([]);
     setScanError(null);
-    setSubfolder('');
   };
 
   const selectedCount = matchedItems.filter((i) => i.selectedToExport).length;
@@ -300,14 +332,12 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowKeyConfig(!showKeyConfig)}
-                className={`h-7 text-xs gap-1 border-border/60 ${
-                  !currentKey
-                    ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
-                    : 'text-muted-foreground hover:text-foreground'
+                className={`h-7 text-xs gap-1 border-border/70 ${
+                  showKeyConfig ? 'bg-secondary text-foreground' : 'text-muted-foreground'
                 }`}
-                title="Cấu hình Google Gemini API Key"
+                title="Cài đặt Google Gemini API Key"
               >
-                <Key className="w-3 h-3 text-amber-400" />
+                <Key className="w-3.5 h-3.5 text-amber-400" />
                 <span>{currentKey ? 'Đổi API Key' : 'Nhập API Key'}</span>
               </Button>
 
@@ -316,9 +346,9 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleReset}
-                  className="h-7 text-xs gap-1 border-border/60 text-muted-foreground hover:text-foreground"
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground border-border/70 gap-1"
                 >
-                  <RefreshCw className="w-3 h-3" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>Quét ảnh khác</span>
                 </Button>
               )}
@@ -326,25 +356,23 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* PHẦN CẤU HÌNH API KEY (TỰ ĐỘNG HIỆN HOẶC KHI BẤM NÚT) */}
+        {/* CẤU HÌNH API KEY TIỆN LỢI TRỰC TIẾP TRÊN GIAO DIỆN */}
         {showKeyConfig && (
-          <div className="p-3 bg-secondary/60 rounded-xl border border-border/70 space-y-2.5 shrink-0 text-xs animate-in fade-in">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                <Key className="w-3.5 h-3.5 text-primary" />
+          <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2 shrink-0 animate-in fade-in slide-in-from-top-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-400" />
                 <span>Cấu hình Gemini API Key</span>
-              </div>
+              </span>
               <a
-                href="https://aistudio.google.com/apikey"
+                href="https://aistudio.google.com/app/apikey"
                 target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                rel="noreferrer"
+                className="text-primary hover:underline text-[11px] inline-flex items-center gap-1 font-medium"
               >
-                <span>Lấy API Key miễn phí tại Google AI Studio</span>
-                <ExternalLink className="w-3 h-3" />
+                <span>Lấy khóa miễn phí tại Google AI Studio</span>
               </a>
             </div>
-
             <div className="flex items-center gap-2">
               <Input
                 type="text"
@@ -424,7 +452,7 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                 </span>
                 <button
                   onClick={() => handleToggleAll(selectedCount !== matchedItems.length)}
-                  className="text-primary hover:underline text-xs font-medium"
+                  className="text-primary hover:underline text-xs font-medium cursor-pointer"
                 >
                   {selectedCount === matchedItems.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
                 </button>
@@ -449,77 +477,58 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
               </div>
             )}
 
-            {/* BẢNG KẾT QUẢ ĐỐI CHIẾU THÔNG MINH */}
-            <div className="flex-1 min-h-0 overflow-auto border border-border/50 rounded-xl bg-card/30">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="sticky top-0 z-10 bg-secondary/90 backdrop-blur-md border-b border-border/60 text-muted-foreground font-mono select-none">
-                  <tr>
-                    <th className="py-2 px-3 w-10 text-center">
+            {/* BẢNG KẾT QUẢ ĐỐI CHIẾU */}
+            <div className="flex-1 min-h-0 overflow-y-auto border border-border/70 rounded-xl bg-card/40">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-secondary/60 text-muted-foreground font-mono text-[11px] sticky top-0 z-10 backdrop-blur-md">
+                  <tr className="border-b border-border/60">
+                    <th className="py-2.5 px-3 w-8">
                       <input
                         type="checkbox"
                         checked={matchedItems.length > 0 && selectedCount === matchedItems.length}
                         onChange={(e) => handleToggleAll(e.target.checked)}
-                        className="rounded border-border"
+                        className="rounded border-border text-primary cursor-pointer accent-primary"
                       />
                     </th>
-                    <th className="py-2 px-3 min-w-[200px] font-medium border-r border-border/40">
-                      Tên file bóc tách
-                    </th>
-                    <th className="py-2 px-3 min-w-[140px] font-medium border-r border-border/40">
-                      Mã Bảng & Khuôn
-                    </th>
-                    <th className="py-2 px-3 min-w-[120px] font-medium border-r border-border/40">
-                      Số PO
-                    </th>
-                    <th className="py-2 px-3 min-w-[130px] font-medium border-r border-border/40">
-                      Trạng thái Kanban
-                    </th>
-                    <th className="py-2 px-3 min-w-[160px] font-medium border-r border-border/40">
-                      Lịch sử Xuất trước đó
-                    </th>
-                    <th className="py-2 px-3 min-w-[180px] font-medium">
-                      Đề xuất của AI
-                    </th>
+                    <th className="py-2.5 px-3 font-semibold">Tên file bóc tách</th>
+                    <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Mã Bảng & Khuôn</th>
+                    <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Số PO</th>
+                    <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Trạng thái Kanban</th>
+                    <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Lịch sử Xuất trước đó</th>
+                    <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Đề xuất hành động</th>
                   </tr>
                 </thead>
-
-                <tbody className="divide-y divide-border/30">
+                <tbody className="divide-y divide-border/40">
                   {matchedItems.map((item) => (
                     <tr
                       key={item.id}
                       onClick={() => handleToggleItem(item.id)}
-                      className={`hover:bg-accent/40 transition-colors cursor-pointer select-none ${
-                        item.selectedToExport ? 'bg-primary/5' : 'opacity-70'
+                      className={`hover:bg-accent/40 cursor-pointer transition-colors ${
+                        item.selectedToExport ? 'bg-primary/5' : 'opacity-65'
                       }`}
                     >
-                      {/* Checkbox */}
-                      <td
-                        className="py-2 px-3 text-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={item.selectedToExport}
                           onChange={() => handleToggleItem(item.id)}
-                          className="rounded border-border"
+                          className="rounded border-border text-primary cursor-pointer accent-primary"
                         />
                       </td>
 
                       {/* Tên file */}
-                      <td className="py-2 px-3 border-r border-border/30 font-mono text-[11px] text-foreground font-medium">
-                        <span className="truncate block max-w-[220px]" title={item.full_name}>
-                          {item.full_name}
-                        </span>
+                      <td className="py-2 px-3 font-mono font-medium text-foreground max-w-xs truncate" title={item.full_name}>
+                        {item.full_name}
                       </td>
 
                       {/* Mã Bảng & Khuôn */}
-                      <td className="py-2 px-3 border-r border-border/30 font-mono">
-                        <div className="flex items-center gap-1 flex-wrap text-[10px]">
-                          <span className="px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <td className="py-2 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
                             {item.board_code}
                           </span>
                           {item.mold_code && (
-                            <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               {item.mold_code}
                             </span>
                           )}
@@ -527,23 +536,28 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                       </td>
 
                       {/* Số PO */}
-                      <td className="py-2 px-3 border-r border-border/30 font-mono text-[11px] text-amber-400">
-                        {item.ref_value ? `PO ${item.ref_value}` : '-'}
+                      <td className="py-2 px-3 font-mono whitespace-nowrap">
+                        {item.ref_value ? (
+                          <span className="text-amber-400 font-semibold">
+                            PO {item.ref_value}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/60">—</span>
+                        )}
                       </td>
 
                       {/* Trạng thái Kanban */}
-                      <td className="py-2 px-3 border-r border-border/30 whitespace-nowrap">
+                      <td className="py-2 px-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-mono border ${
-                            item.isTaskDone
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                            item.matchedTask?.done
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                               : item.matchedTask
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                              : 'bg-secondary text-muted-foreground border-border/50'
+                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              : 'text-muted-foreground bg-secondary/80'
                           }`}
                         >
-                          {item.isTaskDone && <Check className="w-2.5 h-2.5" />}
-                          <span>{item.taskStatusLabel}</span>
+                          {item.taskStatusLabel}
                         </span>
                       </td>
 
@@ -597,7 +611,8 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
         {/* VÙNG 3: FOOTER THIẾT LẬP VÀ XÁC NHẬN CHUYỂN */}
         {matchedItems.length > 0 && (
           <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-3 text-xs flex-wrap">
+              {/* Ngày xuất */}
               <div className="flex items-center gap-1.5 font-mono text-muted-foreground">
                 <Calendar className="w-3.5 h-3.5 text-primary" />
                 <span>Ngày xuất:</span>
@@ -609,24 +624,52 @@ export const AiScannerModal: React.FC<AiScannerModalProps> = ({
                 />
               </div>
 
+              {/* BỘ CHỌN PATH THƯ MỤC LƯU TỚI TRỰC QUAN */}
               <div className="flex items-center gap-1.5 font-mono text-muted-foreground">
                 <Folder className="w-3.5 h-3.5 text-amber-400" />
                 <span>Thư mục:</span>
-                <input
-                  type="text"
-                  value={subfolder}
-                  onChange={(e) => setSubfolder(e.target.value)}
-                  placeholder="bestway, chiều..."
-                  className="h-7 w-32 bg-background border border-input rounded-md px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
-                />
+                <select
+                  value={isCustomSubfolder ? '__custom__' : subfolder}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '__custom__') {
+                      setIsCustomSubfolder(true);
+                      setSubfolder('');
+                    } else {
+                      setIsCustomSubfolder(false);
+                      setSubfolder(val);
+                    }
+                  }}
+                  className="h-7 bg-background border border-input rounded-md px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer max-w-[190px]"
+                >
+                  <option value="">📁 Gốc của ngày</option>
+                  {subfolderOptions.map((f) => (
+                    <option key={f} value={f}>
+                      📁 {f}
+                    </option>
+                  ))}
+                  <option value="__custom__">➕ Tạo thư mục mới...</option>
+                </select>
+
+                {isCustomSubfolder && (
+                  <input
+                    type="text"
+                    value={subfolder}
+                    onChange={(e) => setSubfolder(e.target.value)}
+                    placeholder="Tên thư mục mới..."
+                    autoFocus
+                    className="h-7 w-32 bg-background border border-amber-500/60 rounded-md px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder:text-muted-foreground"
+                  />
+                )}
               </div>
 
+              {/* Checkbox hoàn thành Kanban */}
               <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground select-none">
                 <input
                   type="checkbox"
                   checked={autoCompleteTasks}
                   onChange={(e) => setAutoCompleteTasks(e.target.checked)}
-                  className="rounded border-border text-primary"
+                  className="rounded border-border text-primary accent-primary"
                 />
                 <span>Đồng thời đánh dấu HOÀN THÀNH trên Kanban</span>
               </label>

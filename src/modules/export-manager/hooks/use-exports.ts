@@ -6,6 +6,7 @@ import {
   batchUpdateExportsApi,
   deleteExportApi,
   batchDeleteExportsApi,
+  deleteFolderExportsApi,
 } from '../api';
 import type { ExportItem, ExportFormData, ExportStats } from '../types';
 import type { ExportRow } from '../../../types/database';
@@ -65,6 +66,15 @@ export function useExports() {
     },
   });
 
+  const deleteFolderMutation = useMutation({
+    mutationFn: async (params: { ids: string[]; date?: string; subfolder?: string }) => {
+      return deleteFolderExportsApi(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   // Tính toán số liệu thống kê
   const stats: ExportStats = {
     total: exportsList.length,
@@ -103,6 +113,7 @@ export function useExports() {
     batchUpdateExports: batchUpdateMutation.mutateAsync,
     deleteExport: deleteMutation.mutateAsync,
     batchDeleteExports: batchDeleteMutation.mutateAsync,
+    deleteFolderExports: deleteFolderMutation.mutateAsync,
     checkIsExported,
   };
 }

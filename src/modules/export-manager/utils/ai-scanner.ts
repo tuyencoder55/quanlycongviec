@@ -50,20 +50,25 @@ export function sanitizeApiKey(input: string): string {
  */
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('gemini_api_key');
+    const saved = window.localStorage.getItem('gemini_api_key');
     if (saved && saved.trim()) {
       const sanitized = sanitizeApiKey(saved);
       if (sanitized !== saved) {
-        localStorage.setItem('gemini_api_key', sanitized);
+        window.localStorage.setItem('gemini_api_key', sanitized);
       }
       if (sanitized) return sanitized;
     }
   }
-  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string') {
-    const sanitized = sanitizeApiKey(envKey);
-    if (sanitized) return sanitized;
-  }
+
+  try {
+    const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })?.env;
+    const envKey = metaEnv?.VITE_GEMINI_API_KEY;
+    if (envKey && typeof envKey === 'string') {
+      const sanitized = sanitizeApiKey(envKey);
+      if (sanitized) return sanitized;
+    }
+  } catch {}
+
   return '';
 }
 
@@ -74,9 +79,9 @@ export function saveGeminiApiKey(key: string): void {
   if (typeof window !== 'undefined') {
     const cleanKey = sanitizeApiKey(key);
     if (cleanKey) {
-      localStorage.setItem('gemini_api_key', cleanKey);
+      window.localStorage.setItem('gemini_api_key', cleanKey);
     } else {
-      localStorage.removeItem('gemini_api_key');
+      window.localStorage.removeItem('gemini_api_key');
     }
   }
 }
@@ -186,22 +191,23 @@ QUAN TRỌNG: Trả về duy nhất một mảng JSON các đối tượng, theo
       }
 
       const parsed = JSON.parse(rawJson);
-      const list = Array.isArray(parsed) ? parsed : parsed.files || parsed.items || [];
-      return list
-        .map((item: any, idx: number) => ({
+      const list = Array.isArray(parsed) ? parsed : (parsed as { files?: unknown[]; items?: unknown[] }).files || (parsed as { files?: unknown[]; items?: unknown[] }).items || [];
+      return (list as Array<Record<string, unknown>>)
+        .map((item, idx: number): ScannedFileItem => ({
           id: `ai-item-${Date.now()}-${idx}`,
           full_name: String(item.full_name || item.name || '').trim(),
           board_code: String(item.board_code || '').trim(),
           mold_code: item.mold_code ? String(item.mold_code).trim() : undefined,
-          ref_kind: item.ref_kind === 'po' || item.ref_kind === 'date' ? item.ref_kind : undefined,
+          ref_kind: item.ref_kind === 'po' || item.ref_kind === 'date' ? (item.ref_kind as 'po' | 'date') : undefined,
           ref_value: item.ref_value ? String(item.ref_value).trim() : undefined,
         }))
         .filter((item: ScannedFileItem) => item.board_code || item.full_name);
-    } catch (err: any) {
-      lastError = err;
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      lastError = errorObj;
       // Nếu là lỗi xác thực 401 hoặc permission 403, không cần loop mà ném lỗi ra ngay
-      if (err.message && (err.message.includes('401') || err.message.includes('403') || err.message.includes('API key not valid'))) {
-        throw new Error(`Khóa API không hợp lệ hoặc chưa được kích hoạt (${err.message}). Anh kiểm tra lại API Key nhé.`);
+      if (errorObj?.message && (errorObj.message.includes('401') || errorObj.message.includes('403') || errorObj.message.includes('API key not valid'))) {
+        throw new Error(`Khóa API không hợp lệ hoặc chưa được kích hoạt (${errorObj.message}). Anh kiểm tra lại API Key nhé.`);
       }
     }
   }

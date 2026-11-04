@@ -142,3 +142,48 @@ export async function batchDeleteExportsApi(ids: string[]): Promise<void> {
     console.error('Lỗi xóa hàng loạt dòng xuất trên Supabase:', error);
   }
 }
+
+/**
+ * Xóa toàn bộ file trong thư mục và giải phóng dung lượng khỏi database Supabase
+ */
+export async function deleteFolderExportsApi(params: {
+  ids: string[];
+  date?: string;
+  subfolder?: string;
+}): Promise<void> {
+  const { ids, date, subfolder } = params;
+  if (ids.length > 0) {
+    const idSet = new Set(ids);
+    localExportsStore = localExportsStore.filter((e) => !idSet.has(e.id));
+  }
+
+  if (!isSupabaseConfigured) return;
+
+  // 1. Xóa theo danh sách IDs cụ thể
+  if (ids.length > 0) {
+    const { error } = await supabase.from('exports').delete().in('id', ids);
+    if (error) {
+      console.error('Lỗi khi xóa file theo IDs trên Supabase:', error);
+    }
+  }
+
+  // 2. Xóa triệt để các bản ghi theo ngày và thư mục con
+  if (date && subfolder) {
+    const { error } = await supabase
+      .from('exports')
+      .delete()
+      .eq('exported_at', date)
+      .ilike('subfolder', subfolder);
+    if (error) {
+      console.error('Lỗi khi xóa subfolder trên Supabase:', error);
+    }
+  } else if (date) {
+    const { error } = await supabase
+      .from('exports')
+      .delete()
+      .eq('exported_at', date);
+    if (error) {
+      console.error('Lỗi khi xóa ngày trên Supabase:', error);
+    }
+  }
+}

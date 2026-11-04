@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Folder, ChevronRight, ArrowDownToLine } from 'lucide-react';
+import { Folder, ChevronRight, ArrowDownToLine, MoreVertical } from 'lucide-react';
 
 interface FolderItemCardProps {
   name: string;
   itemCount: number;
   type: 'year' | 'month' | 'day' | 'subfolder';
   updatedAt?: string;
+  isAdmin?: boolean;
   onClick: () => void;
   onDropFiles?: (droppedFileIds: string[], targetName: string, type: 'year' | 'month' | 'day' | 'subfolder') => void;
+  onFolderContextMenu?: (e: React.MouseEvent, name: string, type: 'year' | 'month' | 'day' | 'subfolder', itemCount: number) => void;
 }
 
 export const FolderItemCard: React.FC<FolderItemCardProps> = ({
@@ -15,8 +17,10 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
   itemCount,
   type,
   updatedAt,
+  isAdmin = false,
   onClick,
   onDropFiles,
+  onFolderContextMenu,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -45,7 +49,6 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Chỉ tắt khi chuột rời hẳn khỏi card
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
     }
@@ -69,9 +72,18 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
     }
   };
 
+  const handleCardContextMenu = (e: React.MouseEvent) => {
+    if (onFolderContextMenu) {
+      e.preventDefault();
+      e.stopPropagation();
+      onFolderContextMenu(e, name, type, itemCount);
+    }
+  };
+
   return (
     <div
       onClick={onClick}
+      onContextMenu={handleCardContextMenu}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -84,10 +96,10 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
       title={
         isDragOver
           ? `Thả chuột để chuyển file vào thư mục ${name}`
-          : `Nhấp để mở thư mục ${name}`
+          : `Nhấp để mở hoặc chuột phải để tùy chọn/xóa ${name}`
       }
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Icon thư mục phong cách Windows Explorer hiện đại */}
         <div
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-xs ${
@@ -103,7 +115,7 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
           )}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div
             className={`text-xs font-semibold transition-colors truncate font-mono ${
               isDragOver ? 'text-emerald-300' : 'text-foreground group-hover:text-amber-400'
@@ -133,13 +145,30 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
         </div>
       </div>
 
-      <ChevronRight
-        className={`w-4 h-4 transition-all shrink-0 ml-2 ${
-          isDragOver
-            ? 'text-emerald-400 translate-x-1'
-            : 'text-muted-foreground/50 group-hover:text-amber-400 group-hover:translate-x-0.5'
-        }`}
-      />
+      <div className="flex items-center gap-1 shrink-0 ml-2">
+        {/* Nút 3 chấm mở tùy chọn chuột phải cho màn hình cảm ứng hoặc click nhanh */}
+        {isAdmin && onFolderContextMenu && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFolderContextMenu(e, name, type, itemCount);
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-opacity"
+            title="Tùy chọn thư mục (Xóa, quản lý)"
+          >
+            <MoreVertical className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        <ChevronRight
+          className={`w-4 h-4 transition-all shrink-0 ${
+            isDragOver
+              ? 'text-emerald-400 translate-x-1'
+              : 'text-muted-foreground/50 group-hover:text-amber-400 group-hover:translate-x-0.5'
+          }`}
+        />
+      </div>
     </div>
   );
 };

@@ -54,7 +54,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   revealTrigger,
   onPathChange,
 }) => {
-  const { batchUpdateExports, batchDeleteExports, refetch } = useExports();
+  const { batchUpdateExports, batchDeleteExports, deleteFolderExports, refetch } = useExports();
 
   // Đường dẫn hiện tại: [] = Root, ['2026'], ['2026', '2026-10'], ['2026', '2026-10', '10-15'], ['2026', '2026-10', '10-15', 'bestway']
   const [currentPath, setCurrentPath] = useState<string[]>(() => {
@@ -105,6 +105,25 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
   // Modal xem ảnh phóng to toàn màn hình (Lightbox)
   const [viewingImage, setViewingImage] = useState<ExportItem | null>(null);
+
+  // Menu ngữ cảnh chuột phải trên Folder
+  const [folderContextMenu, setFolderContextMenu] = useState<{
+    x: number;
+    y: number;
+    isOpen: boolean;
+    name: string;
+    type: 'year' | 'month' | 'day' | 'subfolder';
+    itemCount: number;
+  } | null>(null);
+
+  // Modal xác nhận xóa Thư mục khỏi Database
+  const [folderToDelete, setFolderToDelete] = useState<{
+    name: string;
+    type: 'year' | 'month' | 'day' | 'subfolder';
+    itemCount: number;
+  } | null>(null);
+  const [isDeleteFolderOpen, setIsDeleteFolderOpen] = useState(false);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
 
   // Quét chuột chọn nhiều file (Marquee / Rubber-band selection như trên PC)
   const [selectionBox, setSelectionBox] = useState<{
@@ -157,7 +176,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     return [];
   });
 
-  // Menu ngữ cảnh chuột phải (Context Menu phong cách Windows Desktop)
+  // Menu ngữ cảnh chuột phải trên vùng nền (Context Menu phong cách Windows Desktop)
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -168,9 +187,12 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   useEffect(() => {
     const handleCloseMenu = () => {
       setContextMenu((prev) => (prev.isOpen ? { ...prev, isOpen: false } : prev));
+      setFolderContextMenu(null);
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleCloseMenu();
+      if (e.key === 'Escape') {
+        handleCloseMenu();
+      }
     };
 
     window.addEventListener('click', handleCloseMenu);
@@ -196,7 +218,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   // Bắt sự kiện dán ảnh trực tiếp từ clipboard (Ctrl + V) trên trang Explorer
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (isNewFolderOpen || isImageUploadOpen || viewingImage || isMoveModalOpen) return;
+      if (isNewFolderOpen || isImageUploadOpen || viewingImage || isMoveModalOpen || isDeleteFolderOpen) return;
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -210,18 +232,44 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [isNewFolderOpen, isImageUploadOpen, viewingImage, isMoveModalOpen]);
+  }, [isNewFolderOpen, isImageUploadOpen, viewingImage, isMoveModalOpen, isDeleteFolderOpen]);
 
-  // Bắt sự kiện chuột phải trên toàn bộ vùng Explorer
+  // Bắt sự kiện chuột phải trên vùng trống nền Explorer
   const handleContainerContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
+    setFolderContextMenu(null);
     const menuWidth = 220;
     const menuHeight = 180;
     const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
     const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
     setContextMenu({ x, y, isOpen: true });
+  };
+
+  // Bắt sự kiện chuột phải trực tiếp vào thẻ Thư mục
+  const handleFolderContextMenu = (
+    e: React.MouseEvent,
+    name: string,
+    type: 'year' | 'month' | 'day' | 'subfolder',
+    itemCount: number
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+    const menuWidth = 220;
+    const menuHeight = 160;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
+    setFolderContextMenu({
+      x,
+      y,
+      isOpen: true,
+      name,
+      type,
+      itemCount,
+    });
   };
 
   // Lọc items theo đường dẫn hiện tại
@@ -491,9 +539,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
     [subfolderFiles]
   );
 
-  // Danh sách file PDF đang hiển thị ở màn hình hiện tại
-  const currentPdfs = level === 4 ? subfolderPdfs : dayPdfs;
-
   // Xử lý chọn/bỏ chọn từng file (hỗ trợ Shift+Click dải file)
   const handleToggleSelectFile = (id: string, shiftKey: boolean, currentList: ExportItem[]) => {
     if (shiftKey && selectedFileIds.length > 0) {
@@ -601,10 +646,81 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   // Xóa hàng loạt file đã chọn
   const handleBatchDelete = async () => {
     if (!isAdmin || selectedFileIds.length === 0) return;
-    if (window.confirm(`Anh có chắc chắn muốn xóa vĩnh viễn ${selectedFileIds.length} file đã chọn không?`)) {
+    if (window.confirm(`Anh có chắc chắn muốn xóa vĩnh viễn ${selectedFileIds.length} file đã chọn khỏi database không?`)) {
       await batchDeleteExports(selectedFileIds);
       await refetch();
       setSelectedFileIds([]);
+    }
+  };
+
+  // ==========================================
+  // XÓA THƯ MỤC TRIỆT ĐỂ KHỎI DATABASE
+  // ==========================================
+  const handleConfirmDeleteFolder = async () => {
+    if (!folderToDelete || !isAdmin) return;
+    setIsDeletingFolder(true);
+    try {
+      const { name, type } = folderToDelete;
+      let targetIds: string[] = [];
+      let targetDate: string | undefined;
+      let targetSubfolder: string | undefined;
+
+      if (type === 'subfolder') {
+        targetDate = `${currentMonth?.slice(0, 4)}-${currentDay}`;
+        targetSubfolder = name;
+        targetIds = items
+          .filter(
+            (i) =>
+              (i.exported_at || '').replace(/\//g, '-').slice(0, 10) === targetDate &&
+              i.subfolder?.toLowerCase() === name.toLowerCase()
+          )
+          .map((i) => i.id);
+
+        const updated = customFolders.filter((f) => f.toLowerCase() !== name.toLowerCase());
+        setCustomFolders(updated);
+        localStorage.setItem('nexus_custom_folders', JSON.stringify(updated));
+      } else if (type === 'day') {
+        targetDate = `${currentYear}-${name}`;
+        targetIds = items
+          .filter((i) => (i.exported_at || '').replace(/\//g, '-').slice(0, 10) === targetDate)
+          .map((i) => i.id);
+
+        const updated = customDays.filter((d) => d !== name && d !== targetDate);
+        setCustomDays(updated);
+        localStorage.setItem('nexus_custom_days', JSON.stringify(updated));
+      } else if (type === 'month') {
+        targetIds = items
+          .filter((i) => (i.exported_at || '').replace(/\//g, '-').startsWith(name))
+          .map((i) => i.id);
+
+        const updated = customMonths.filter((m) => m !== name);
+        setCustomMonths(updated);
+        localStorage.setItem('nexus_custom_months', JSON.stringify(updated));
+      } else if (type === 'year') {
+        targetIds = items
+          .filter((i) => (i.exported_at || '').replace(/\//g, '-').startsWith(name))
+          .map((i) => i.id);
+
+        const updated = customYears.filter((y) => y !== name);
+        setCustomYears(updated);
+        localStorage.setItem('nexus_custom_years', JSON.stringify(updated));
+      }
+
+      // Xóa triệt để các file thuộc thư mục này khỏi Database Supabase
+      await deleteFolderExports({
+        ids: targetIds,
+        date: targetDate,
+        subfolder: targetSubfolder,
+      });
+
+      await refetch();
+      setIsDeleteFolderOpen(false);
+      setFolderToDelete(null);
+    } catch (err) {
+      console.error('Lỗi khi xóa thư mục khỏi database:', err);
+      alert('Đã xảy ra lỗi khi xóa thư mục. Vui lòng thử lại.');
+    } finally {
+      setIsDeletingFolder(false);
     }
   };
 
@@ -649,7 +765,6 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
       fileElements.forEach((el) => {
         const rect = el.getBoundingClientRect();
-        // Kiểm tra va chạm giao nhau giữa khung chữ nhật quét và thẻ file
         const isIntersecting = !(
           rect.right < boxLeft ||
           rect.left > boxRight ||
@@ -782,7 +897,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
               <span>Chọn Năm • 年份列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
-                (Chuột phải vào vùng trống để tạo thư mục mới)
+                (Chuột phải vào thư mục để xóa khỏi database)
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -811,11 +926,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                   key={year}
                   name={year}
                   type="year"
+                  isAdmin={isAdmin}
                   itemCount={
                     items.filter((i) => i.exported_at && i.exported_at.startsWith(year))
                       .length
                   }
                   onClick={() => setCurrentPath([year])}
+                  onFolderContextMenu={handleFolderContextMenu}
                 />
               ))}
             </div>
@@ -828,7 +945,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
               <span>Năm {currentYear} &gt; Chọn Tháng • 月份列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
-                (Chuột phải vào vùng trống để tạo tháng mới)
+                (Chuột phải vào thư mục để xóa khỏi database)
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -857,11 +974,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                   key={month}
                   name={month}
                   type="month"
+                  isAdmin={isAdmin}
                   itemCount={
                     items.filter((i) => i.exported_at && i.exported_at.startsWith(month))
                       .length
                   }
                   onClick={() => setCurrentPath([currentYear, month])}
+                  onFolderContextMenu={handleFolderContextMenu}
                 />
               ))}
             </div>
@@ -874,7 +993,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
               <span>Tháng {currentMonth} &gt; Chọn Ngày • 日期列表</span>
               <span className="text-[10px] text-muted-foreground font-normal">
-                (Chuột phải vào vùng trống để tạo ngày mới)
+                (Chuột phải vào thư mục ngày để xóa khỏi database)
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -903,9 +1022,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                   key={dayTag}
                   name={dayTag}
                   type="day"
+                  isAdmin={isAdmin}
                   itemCount={count}
                   onClick={() => setCurrentPath([currentYear, currentMonth, dayTag])}
                   onDropFiles={handleDropFilesOnFolder}
+                  onFolderContextMenu={handleFolderContextMenu}
                 />
               ))}
             </div>
@@ -920,7 +1041,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
               <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
                 <span>Thư Mục Con (Ngày {currentDay}) • 子目录</span>
                 <span className="text-[10px] text-muted-foreground font-normal">
-                  (Nắm file kéo thả trực tiếp vào ô thư mục bên dưới)
+                  (Chuột phải vào thư mục con để xóa khỏi database)
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -949,11 +1070,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                     key={name}
                     name={name}
                     type="subfolder"
+                    isAdmin={isAdmin}
                     itemCount={count}
                     onClick={() =>
                       setCurrentPath([currentYear, currentMonth, currentDay, name])
                     }
                     onDropFiles={handleDropFilesOnFolder}
+                    onFolderContextMenu={handleFolderContextMenu}
                   />
                 ))}
               </div>
@@ -1294,7 +1417,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         </div>
       )}
 
-      {/* MENU NGỮ CẢNH CHUỘT PHẢI (CONTEXT MENU NHƯ DESKTOP WINDOWS) */}
+      {/* MENU NGỮ CẢNH CHUỘT PHẢI TRÊN VÙNG NỀN TRỐNG */}
       {contextMenu.isOpen && (
         <div
           style={{ top: contextMenu.y, left: contextMenu.x }}
@@ -1364,6 +1487,106 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </button>
         </div>
       )}
+
+      {/* MENU NGỮ CẢNH CHUỘT PHẢI TRÊN TỪNG THẺ THƯ MỤC (XÓA KHỎI DATABASE) */}
+      {folderContextMenu?.isOpen && (
+        <div
+          style={{ top: folderContextMenu.y, left: folderContextMenu.x }}
+          className="fixed z-50 w-60 rounded-xl border border-border/80 bg-popover/95 backdrop-blur-xl p-1.5 shadow-2xl animate-in fade-in zoom-in-95 select-none text-xs"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-2.5 py-1.5 text-[10px] font-mono border-b border-border/40 mb-1 flex items-center justify-between">
+            <span className="font-semibold text-foreground truncate max-w-[130px]" title={folderContextMenu.name}>
+              📁 {folderContextMenu.name}
+            </span>
+            <span className="text-amber-400 font-semibold">{folderContextMenu.itemCount} mục</span>
+          </div>
+
+          <button
+            onClick={() => {
+              const { name, type } = folderContextMenu;
+              if (type === 'year') setCurrentPath([name]);
+              else if (type === 'month') setCurrentPath([currentYear, name]);
+              else if (type === 'day') setCurrentPath([currentYear, currentMonth, name]);
+              else if (type === 'subfolder') setCurrentPath([currentYear, currentMonth, currentDay, name]);
+              setFolderContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-foreground hover:bg-accent text-xs font-medium transition-colors text-left cursor-pointer"
+          >
+            <Folder className="w-3.5 h-3.5 text-amber-400" />
+            <span>Mở thư mục này</span>
+          </button>
+
+          {isAdmin && (
+            <>
+              <div className="my-1 border-t border-border/40" />
+              <button
+                onClick={() => {
+                  setFolderToDelete({
+                    name: folderContextMenu.name,
+                    type: folderContextMenu.type,
+                    itemCount: folderContextMenu.itemCount,
+                  });
+                  setFolderContextMenu(null);
+                  setIsDeleteFolderOpen(true);
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15 text-xs font-medium transition-colors text-left cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>Xóa thư mục (Khỏi Database)</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* DIALOG XÁC NHẬN XÓA THƯ MỤC KHỎI DATABASE */}
+      <Dialog open={isDeleteFolderOpen} onOpenChange={setIsDeleteFolderOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 border-rose-500/30">
+          <DialogHeader>
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mb-1">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Xác Nhận Xóa Thư Mục "{folderToDelete?.name}"?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
+              {folderToDelete?.itemCount && folderToDelete.itemCount > 0 ? (
+                <span>
+                  Thư mục này hiện chứa <strong className="text-primary font-mono">{folderToDelete.itemCount} file</strong> trong hệ thống. Thao tác này sẽ <strong className="text-rose-400 font-semibold">xóa vĩnh viễn toàn bộ {folderToDelete.itemCount} file này khỏi cơ sở dữ liệu Supabase</strong> để giải phóng dung lượng và xóa thư mục hoàn toàn.
+                </span>
+              ) : (
+                <span>
+                  Thư mục này hiện đang trống (0 file). Thao tác này sẽ xóa thư mục khỏi hệ thống.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeleteFolderOpen(false)}
+              disabled={isDeletingFolder}
+              className="text-xs"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmDeleteFolder}
+              disabled={isDeletingFolder}
+              className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-medium gap-1.5 shadow-sm"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeletingFolder ? 'Đang xóa DB...' : 'Xác nhận xóa khỏi Database'}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* DIALOG TẠO THƯ MỤC LINH HOẠT TẠI MỌI CẤP */}
       <Dialog open={isNewFolderOpen} onOpenChange={setIsNewFolderOpen}>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { ExportItem } from '../types';
 import { formatDate } from '../../../lib/utils';
-import { Button } from '../../../components/ui/button';
 import {
   Copy,
   Check,
@@ -158,99 +157,99 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-[12px] bg-surface">
+    <div className="w-full overflow-hidden rounded-[12px] bg-surface flex flex-col">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-[13px]">
-          {/* Header Bảng tra cứu */}
+        <table className="w-full text-left border-collapse text-[12.5px]">
+          {/* Header Bảng tra cứu — 1 dòng không nhảy chữ */}
           <thead>
-            <tr className="border-b border-[var(--border)] bg-track text-muted-text font-mono text-[12px] select-none">
-              <th className="py-2.5 px-3 w-12 text-center border-r border-[var(--border)] font-medium">
+            <tr className="border-b border-[var(--border)] bg-track text-muted-text font-mono text-[11.5px] select-none">
+              <th className="py-2.5 px-3 w-11 text-center border-r border-[var(--border)] font-medium whitespace-nowrap">
                 #
               </th>
 
               <th
                 onClick={() => handleSort('board_code')}
-                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5">
                   <span>Mã Bảng</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('mold_code')}
-                className="py-2.5 px-3 w-28 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5">
                   <span>Mã Khuôn</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('ref_value')}
-                className="py-2.5 px-3 w-36 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5">
                   <span>Số PO / Ngày</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               {/* 3 Cột ngày xuất riêng biệt cho Bảng, Khuôn và PO */}
               <th
                 onClick={() => handleSort('board_date')}
-                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5 text-tag-board-text">
-                  <Layers className="w-3 h-3" />
-                  <span>Ngày xuất Bảng</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                <div className="inline-flex items-center gap-1.5 text-tag-board-text">
+                  <Layers className="w-3 h-3 shrink-0" />
+                  <span>Xuất Bảng</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('mold_date')}
-                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5 text-dot-mold">
-                  <Box className="w-3 h-3" />
-                  <span>Ngày xuất Khuôn</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                <div className="inline-flex items-center gap-1.5 text-dot-mold">
+                  <Box className="w-3 h-3 shrink-0" />
+                  <span>Xuất Khuôn</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('po_date')}
-                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5 text-tag-po-text">
-                  <Hash className="w-3 h-3" />
-                  <span>Ngày xuất PO</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                <div className="inline-flex items-center gap-1.5 text-tag-po-text">
+                  <Hash className="w-3 h-3 shrink-0" />
+                  <span>Xuất PO</span>
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('full_name')}
-                className="py-2.5 px-3 min-w-[280px] border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
+                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5">
                   <span>Tên đầy đủ (Tên file gốc)</span>
-                  <ArrowUpDown className="w-3 h-3 opacity-60" />
+                  <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               {(isAdmin || onRevealInFolder) && (
-                <th className="py-2.5 px-3 w-24 text-center font-medium">
+                <th className="py-2.5 px-3 text-center font-medium whitespace-nowrap">
                   Thao tác
                 </th>
               )}
             </tr>
           </thead>
 
-          {/* Dữ liệu các dòng Bảng tính */}
+          {/* Dữ liệu các dòng Bảng tính — đồng bộ token Light & Dark */}
           <tbody className="divide-y divide-[var(--border)] font-mono">
             {sortedItems.map((item, index) => {
               const { boardDate, moldDate, poDate, isBoardLegacy } = getExportDates(item);
@@ -264,151 +263,154 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                 <tr
                   key={item.id}
                   onDoubleClick={() => onRevealInFolder?.(item)}
-                  className="group hover:bg-accent/40 transition-colors font-sans"
+                  className="group bg-row hover:bg-row-hover transition-colors font-sans"
                   title="Nhấp đúp chuột vào dòng để mở vị trí trong Thư Mục"
                 >
                   {/* STT */}
-                  <td className="py-2 px-3 text-center text-muted-foreground/70 font-mono text-[11px] border-r border-border/40 bg-secondary/15">
+                  <td className="py-2.5 px-3 text-center text-subtle font-mono text-[12px] border-r border-[var(--border)] whitespace-nowrap tabular-nums">
                     {index + 1}
                   </td>
 
                   {/* Mã Bảng */}
-                  <td className="py-2 px-3 border-r border-border/40 font-mono font-semibold text-primary">
+                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     <div
                       onClick={() => copyToClipboard(item.board_code, `board-${item.id}`)}
-                      className="inline-flex items-center gap-1.5 cursor-pointer hover:underline"
+                      className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
                       title="Nhấp để copy mã bảng"
                     >
-                      <span>{item.board_code}</span>
+                      <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-tag-board-bg text-tag-board-text">
+                        {item.board_code}
+                      </span>
                       {isBoardCopied ? (
-                        <Check className="w-3 h-3 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
                       ) : (
-                        <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
+                        <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
                       )}
                     </div>
                   </td>
 
                   {/* Mã Khuôn */}
-                  <td className="py-2 px-3 border-r border-border/40 font-mono text-emerald-400">
+                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     {item.mold_code ? (
                       <div
                         onClick={() => copyToClipboard(item.mold_code!, `mold-${item.id}`)}
-                        className="inline-flex items-center gap-1.5 cursor-pointer hover:underline"
+                        className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
                         title="Nhấp để copy mã khuôn"
                       >
-                        <span>{item.mold_code}</span>
+                        <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-emerald-500/10 text-dot-mold">
+                          {item.mold_code}
+                        </span>
                         {isMoldCopied ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
+                          <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
                         ) : (
-                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
+                          <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/40 font-sans">-</span>
+                      <span className="text-faint">—</span>
                     )}
                   </td>
 
                   {/* Số PO / Tham chiếu */}
-                  <td className="py-2 px-3 border-r border-border/40 font-mono text-amber-400">
+                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     {item.ref_value ? (
                       <div
                         onClick={() => copyToClipboard(item.ref_value!, `po-${item.id}`)}
-                        className="inline-flex items-center gap-1.5 cursor-pointer hover:underline"
+                        className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
                         title="Nhấp để copy PO / Tham chiếu"
                       >
-                        <span>{item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value}</span>
+                        <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-tag-po-bg text-tag-po-text">
+                          {item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value}
+                        </span>
                         {isPoCopied ? (
-                          <Check className="w-3 h-3 text-amber-400" />
+                          <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
                         ) : (
-                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity text-muted-foreground" />
+                          <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/40 font-sans">-</span>
+                      <span className="text-faint">—</span>
                     )}
                   </td>
 
                   {/* 1. Ngày xuất Bảng */}
-                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {isBoardLegacy ? (
                       <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-secondary/80 text-muted-foreground border border-border/60 text-[10px] font-sans font-medium"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] bg-track text-muted-text text-[11px] font-sans font-medium"
                         title="Bảng đã xuất trước đó (hồ sơ cũ)"
                       >
-                        <History className="w-3 h-3 text-muted-foreground/80" />
-                        <span>Đã xuất trước đây</span>
+                        <History className="w-3 h-3 text-subtle shrink-0" />
+                        <span>Hồ sơ cũ</span>
                       </span>
                     ) : boardDate ? (
-                      <span className="inline-flex items-center gap-1 text-indigo-400/90 font-medium">
-                        <Calendar className="w-3 h-3 opacity-60" />
+                      <span className="inline-flex items-center gap-1.5 text-tag-board-text font-medium">
+                        <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(boardDate)}</span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/30 font-sans">-</span>
+                      <span className="text-faint">—</span>
                     )}
                   </td>
 
                   {/* 2. Ngày xuất Khuôn */}
-                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {moldDate ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400/90 font-medium">
-                        <Calendar className="w-3 h-3 opacity-60" />
+                      <span className="inline-flex items-center gap-1.5 text-dot-mold font-medium">
+                        <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(moldDate)}</span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/30 font-sans">-</span>
+                      <span className="text-faint">—</span>
                     )}
                   </td>
 
                   {/* 3. Ngày xuất PO */}
-                  <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap border-r border-border/40">
+                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {poDate ? (
-                      <span className="inline-flex items-center gap-1 text-amber-400/90 font-medium">
-                        <Calendar className="w-3 h-3 opacity-60" />
+                      <span className="inline-flex items-center gap-1.5 text-tag-po-text font-medium">
+                        <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(poDate)}</span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground/30 font-sans">-</span>
+                      <span className="text-faint">—</span>
                     )}
                   </td>
 
-                  {/* Tên đầy đủ (File) - Nhấp vào tên file để mở thư mục */}
-                  <td className="py-2 px-3 border-r border-border/40 font-mono text-[11px] text-foreground/80">
-                    <div className="flex items-center justify-between gap-2">
+                  {/* Tên đầy đủ (File) — cắt gọn 1 dòng không đẩy tràn cột Thao tác */}
+                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono text-[12.5px] max-w-[260px] xl:max-w-[360px]">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
                       <div
                         onClick={() => onRevealInFolder?.(item)}
-                        className="flex items-center gap-1.5 min-w-0 cursor-pointer group/file hover:text-primary transition-colors flex-1"
-                        title={`Nhấp để mở thư mục chứa file này (${item.subfolder ? item.subfolder : `Ngày ${formatDate(item.exported_at)}`})`}
+                        className="flex items-center gap-1.5 min-w-0 cursor-pointer group/file flex-1"
+                        title={`${item.full_name} — Nhấp để mở thư mục`}
                       >
                         {item.subfolder ? (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 group-hover/file:bg-amber-500/25 group-hover/file:border-amber-500/50 shrink-0 transition-all flex items-center gap-1 shadow-2xs">
-                            <span>📁 {item.subfolder}</span>
-                            <FolderOpen className="w-2.5 h-2.5 opacity-60 group-hover/file:opacity-100" />
+                          <span className="px-1.5 py-0.5 rounded-[6px] text-[10.5px] font-mono bg-tag-po-bg text-tag-po-text shrink-0 inline-flex items-center gap-1">
+                            <FolderOpen className="w-3 h-3 shrink-0" />
+                            <span>{item.subfolder}</span>
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-secondary text-muted-foreground border border-border/50 group-hover/file:text-foreground shrink-0 transition-all flex items-center gap-1">
-                            <FolderOpen className="w-2.5 h-2.5 opacity-60 group-hover/file:opacity-100 text-amber-400" />
-                          </span>
+                          <FolderOpen className="w-3.5 h-3.5 text-subtle shrink-0" />
                         )}
-                        <span className="truncate group-hover/file:underline font-medium text-foreground">
+                        <span className="truncate font-medium text-text group-hover/file:text-primary group-hover/file:underline">
                           {item.full_name}
                         </span>
                       </div>
 
-                      {/* Nút Copy riêng biệt */}
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           copyToClipboard(item.full_name, `name-${item.id}`);
                         }}
-                        className="shrink-0 p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                        className="shrink-0 w-6 h-6 rounded-[6px] flex items-center justify-center text-subtle hover:text-text hover:bg-track transition-colors"
                         title="Sao chép tên file này"
                       >
                         {isNameCopied ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <Check className="w-3.5 h-3.5 text-dot-mold" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5 opacity-50 hover:opacity-100" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
                     </div>
@@ -416,45 +418,41 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
                   {/* Thao tác */}
                   {(isAdmin || onRevealInFolder) && (
-                    <td className="py-2 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Nút Mở vị trí thư mục (Reveal in folder) */}
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <div className="inline-flex items-center justify-center gap-1">
                         {onRevealInFolder && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               onRevealInFolder(item);
                             }}
-                            className="h-7 px-2 text-xs gap-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/15 rounded-lg border border-amber-500/30 hover:border-amber-500/50 transition-colors font-medium shadow-2xs"
+                            className="h-7 px-2.5 rounded-[8px] text-[12px] font-medium bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-track text-text inline-flex items-center gap-1.5 transition-colors"
                             title={`Mở vị trí trong Cây Thư Mục (${item.subfolder ? `thư mục ${item.subfolder}` : `ngày ${formatDate(item.exported_at)}`})`}
                           >
-                            <FolderOpen className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Mở folder</span>
-                          </Button>
+                            <FolderOpen className="w-3.5 h-3.5 text-dot-po shrink-0" />
+                            <span>Mở</span>
+                          </button>
                         )}
                         {isAdmin && onEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
+                          <button
+                            type="button"
                             onClick={() => onEdit(item)}
-                            className="w-6 h-6 text-muted-foreground hover:text-foreground rounded-lg"
+                            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-track transition-colors"
                             title="Sửa dòng xuất"
                           >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                         {isAdmin && onDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
+                          <button
+                            type="button"
                             onClick={() => onDelete(item.id)}
-                            className="w-6 h-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-pdf-text hover:bg-pdf-bg transition-colors"
                             title="Xóa dòng xuất"
                           >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -467,11 +465,13 @@ export const ExportTable: React.FC<ExportTableProps> = ({
       </div>
 
       {/* Footer bảng tính tổng kết số dòng */}
-      <div className="py-2 px-4 bg-secondary/40 border-t border-border/70 flex items-center justify-between text-[11px] font-mono text-muted-foreground select-none">
+      <div className="py-2.5 px-4 bg-track border-t border-[var(--border)] flex items-center justify-between text-[12px] font-mono text-muted-text select-none">
         <span>
-          Tổng cộng: <strong className="text-foreground">{items.length}</strong> dòng xuất khuôn bảng
+          Tổng cộng: <strong className="text-text">{items.length}</strong> dòng xuất khuôn bảng
         </span>
-        <span>Mẹo: Nhấp vào bất kỳ ô mã hoặc tên file nào để copy nhanh</span>
+        <span className="hidden sm:inline font-sans text-subtle">
+          Mẹo: Nhấp vào bất kỳ ô mã hoặc tên file nào để copy nhanh
+        </span>
       </div>
     </div>
   );

@@ -159,19 +159,19 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   return (
     <div className="w-full overflow-hidden rounded-[12px] bg-surface flex flex-col">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-[12.5px]">
-          {/* Header Bảng tra cứu — 1 dòng không nhảy chữ */}
+        <table className="w-full text-left border-collapse text-[12px]">
+          {/* Header Bảng tra cứu — gọn, 1 dòng, không đẩy tràn cột Thao tác */}
           <thead>
-            <tr className="border-b border-[var(--border)] bg-track text-muted-text font-mono text-[11.5px] select-none">
-              <th className="py-2.5 px-3 w-11 text-center border-r border-[var(--border)] font-medium whitespace-nowrap">
+            <tr className="border-b border-[var(--border)] bg-track text-muted-text font-mono text-[11px] select-none">
+              <th className="py-2.5 px-2 w-9 text-center border-r border-[var(--border)] font-medium whitespace-nowrap">
                 #
               </th>
 
               <th
                 onClick={() => handleSort('board_code')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2.5 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5">
+                <div className="inline-flex items-center gap-1">
                   <span>Mã Bảng</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
@@ -179,20 +179,20 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('mold_code')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2.5 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5">
-                  <span>Mã Khuôn</span>
+                <div className="inline-flex items-center gap-1">
+                  <span>Khuôn</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               <th
                 onClick={() => handleSort('ref_value')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2.5 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5">
-                  <span>Số PO / Ngày</span>
+                <div className="inline-flex items-center gap-1">
+                  <span>Số PO</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
@@ -200,9 +200,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
               {/* 3 Cột ngày xuất riêng biệt cho Bảng, Khuôn và PO */}
               <th
                 onClick={() => handleSort('board_date')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5 text-tag-board-text">
+                <div className="inline-flex items-center gap-1 text-tag-board-text">
                   <Layers className="w-3 h-3 shrink-0" />
                   <span>Xuất Bảng</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
@@ -211,9 +211,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('mold_date')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5 text-dot-mold">
+                <div className="inline-flex items-center gap-1 text-dot-mold">
                   <Box className="w-3 h-3 shrink-0" />
                   <span>Xuất Khuôn</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
@@ -222,9 +222,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('po_date')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5 text-tag-po-text">
+                <div className="inline-flex items-center gap-1 text-tag-po-text">
                   <Hash className="w-3 h-3 shrink-0" />
                   <span>Xuất PO</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
@@ -233,16 +233,16 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('full_name')}
-                className="py-2.5 px-3 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
+                className="py-2.5 px-2.5 w-full border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors whitespace-nowrap"
               >
-                <div className="inline-flex items-center gap-1.5">
-                  <span>Tên đầy đủ (Tên file gốc)</span>
+                <div className="inline-flex items-center gap-1">
+                  <span>Tên file gốc</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60 shrink-0" />
                 </div>
               </th>
 
               {(isAdmin || onRevealInFolder) && (
-                <th className="py-2.5 px-3 text-center font-medium whitespace-nowrap">
+                <th className="sticky right-0 z-10 bg-track py-2.5 px-2.5 text-center font-medium whitespace-nowrap border-l border-[var(--border)]">
                   Thao tác
                 </th>
               )}
@@ -267,44 +267,36 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   title="Nhấp đúp chuột vào dòng để mở vị trí trong Thư Mục"
                 >
                   {/* STT */}
-                  <td className="py-2.5 px-3 text-center text-subtle font-mono text-[12px] border-r border-[var(--border)] whitespace-nowrap tabular-nums">
+                  <td className="py-2 px-2 text-center text-subtle font-mono text-[11.5px] border-r border-[var(--border)] whitespace-nowrap tabular-nums">
                     {index + 1}
                   </td>
 
                   {/* Mã Bảng */}
-                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
+                  <td className="py-2 px-2.5 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     <div
                       onClick={() => copyToClipboard(item.board_code, `board-${item.id}`)}
-                      className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
+                      className="inline-flex items-center gap-1 cursor-pointer group/copy"
                       title="Nhấp để copy mã bảng"
                     >
-                      <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-tag-board-bg text-tag-board-text">
+                      <span className="px-2 py-0.5 rounded-[6px] text-[11px] font-medium bg-tag-board-bg text-tag-board-text">
                         {item.board_code}
                       </span>
-                      {isBoardCopied ? (
-                        <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
-                      ) : (
-                        <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
-                      )}
+                      {isBoardCopied && <Check className="w-3 h-3 text-dot-mold shrink-0" />}
                     </div>
                   </td>
 
                   {/* Mã Khuôn */}
-                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
+                  <td className="py-2 px-2.5 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     {item.mold_code ? (
                       <div
                         onClick={() => copyToClipboard(item.mold_code!, `mold-${item.id}`)}
-                        className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
+                        className="inline-flex items-center gap-1 cursor-pointer group/copy"
                         title="Nhấp để copy mã khuôn"
                       >
-                        <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-emerald-500/10 text-dot-mold">
+                        <span className="px-2 py-0.5 rounded-[6px] text-[11px] font-medium bg-emerald-500/10 text-dot-mold">
                           {item.mold_code}
                         </span>
-                        {isMoldCopied ? (
-                          <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
-                        ) : (
-                          <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
-                        )}
+                        {isMoldCopied && <Check className="w-3 h-3 text-dot-mold shrink-0" />}
                       </div>
                     ) : (
                       <span className="text-faint">—</span>
@@ -312,21 +304,17 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   </td>
 
                   {/* Số PO / Tham chiếu */}
-                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono whitespace-nowrap">
+                  <td className="py-2 px-2.5 border-r border-[var(--border)] font-mono whitespace-nowrap">
                     {item.ref_value ? (
                       <div
                         onClick={() => copyToClipboard(item.ref_value!, `po-${item.id}`)}
-                        className="inline-flex items-center gap-1.5 cursor-pointer group/copy"
+                        className="inline-flex items-center gap-1 cursor-pointer group/copy"
                         title="Nhấp để copy PO / Tham chiếu"
                       >
-                        <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-tag-po-bg text-tag-po-text">
+                        <span className="px-2 py-0.5 rounded-[6px] text-[11px] font-medium bg-tag-po-bg text-tag-po-text">
                           {item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value}
                         </span>
-                        {isPoCopied ? (
-                          <Check className="w-3.5 h-3.5 text-dot-mold shrink-0" />
-                        ) : (
-                          <Copy className="w-3 h-3 opacity-0 group-hover/copy:opacity-80 transition-opacity text-subtle shrink-0" />
-                        )}
+                        {isPoCopied && <Check className="w-3 h-3 text-dot-mold shrink-0" />}
                       </div>
                     ) : (
                       <span className="text-faint">—</span>
@@ -334,17 +322,17 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   </td>
 
                   {/* 1. Ngày xuất Bảng */}
-                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
+                  <td className="py-2 px-2 font-mono text-[11.5px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {isBoardLegacy ? (
                       <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] bg-track text-muted-text text-[11px] font-sans font-medium"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] bg-track text-muted-text text-[10.5px] font-sans font-medium"
                         title="Bảng đã xuất trước đó (hồ sơ cũ)"
                       >
                         <History className="w-3 h-3 text-subtle shrink-0" />
                         <span>Hồ sơ cũ</span>
                       </span>
                     ) : boardDate ? (
-                      <span className="inline-flex items-center gap-1.5 text-tag-board-text font-medium">
+                      <span className="inline-flex items-center gap-1 text-tag-board-text font-medium">
                         <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(boardDate)}</span>
                       </span>
@@ -354,9 +342,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   </td>
 
                   {/* 2. Ngày xuất Khuôn */}
-                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
+                  <td className="py-2 px-2 font-mono text-[11.5px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {moldDate ? (
-                      <span className="inline-flex items-center gap-1.5 text-dot-mold font-medium">
+                      <span className="inline-flex items-center gap-1 text-dot-mold font-medium">
                         <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(moldDate)}</span>
                       </span>
@@ -366,9 +354,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                   </td>
 
                   {/* 3. Ngày xuất PO */}
-                  <td className="py-2.5 px-3 font-mono text-[12px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
+                  <td className="py-2 px-2 font-mono text-[11.5px] whitespace-nowrap border-r border-[var(--border)] tabular-nums">
                     {poDate ? (
-                      <span className="inline-flex items-center gap-1.5 text-tag-po-text font-medium">
+                      <span className="inline-flex items-center gap-1 text-tag-po-text font-medium">
                         <Calendar className="w-3 h-3 opacity-70 shrink-0" />
                         <span>{formatDate(poDate)}</span>
                       </span>
@@ -377,16 +365,16 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                     )}
                   </td>
 
-                  {/* Tên đầy đủ (File) — cắt gọn 1 dòng không đẩy tràn cột Thao tác */}
-                  <td className="py-2.5 px-3 border-r border-[var(--border)] font-mono text-[12.5px] max-w-[260px] xl:max-w-[360px]">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                  {/* Tên đầy đủ (File) — co giãn linh hoạt, cắt "..." để không bao giờ đẩy tràn Thao tác */}
+                  <td className="py-2 px-2.5 border-r border-[var(--border)] font-mono text-[12px] max-w-[180px] xl:max-w-[260px] 2xl:max-w-[360px]">
+                    <div className="flex items-center justify-between gap-1.5 min-w-0">
                       <div
                         onClick={() => onRevealInFolder?.(item)}
                         className="flex items-center gap-1.5 min-w-0 cursor-pointer group/file flex-1"
                         title={`${item.full_name} — Nhấp để mở thư mục`}
                       >
                         {item.subfolder ? (
-                          <span className="px-1.5 py-0.5 rounded-[6px] text-[10.5px] font-mono bg-tag-po-bg text-tag-po-text shrink-0 inline-flex items-center gap-1">
+                          <span className="px-1.5 py-0.5 rounded-[6px] text-[10px] font-mono bg-tag-po-bg text-tag-po-text shrink-0 inline-flex items-center gap-1">
                             <FolderOpen className="w-3 h-3 shrink-0" />
                             <span>{item.subfolder}</span>
                           </span>
@@ -416,9 +404,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Thao tác */}
+                  {/* Thao tác — ghim cố định bên phải (sticky) để luôn nhìn thấy trọn vẹn */}
                   {(isAdmin || onRevealInFolder) && (
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <td className="sticky right-0 z-10 bg-row group-hover:bg-row-hover py-2 px-2.5 text-center whitespace-nowrap border-l border-[var(--border)]">
                       <div className="inline-flex items-center justify-center gap-1">
                         {onRevealInFolder && (
                           <button
@@ -427,11 +415,10 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                               e.stopPropagation();
                               onRevealInFolder(item);
                             }}
-                            className="h-7 px-2.5 rounded-[8px] text-[12px] font-medium bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-track text-text inline-flex items-center gap-1.5 transition-colors"
-                            title={`Mở vị trí trong Cây Thư Mục (${item.subfolder ? `thư mục ${item.subfolder}` : `ngày ${formatDate(item.exported_at)}`})`}
+                            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-dot-po hover:bg-tag-po-bg transition-colors"
+                            title={`Mở vị trí trong Thư Mục (${item.subfolder ? `thư mục ${item.subfolder}` : `ngày ${formatDate(item.exported_at)}`})`}
                           >
-                            <FolderOpen className="w-3.5 h-3.5 text-dot-po shrink-0" />
-                            <span>Mở</span>
+                            <FolderOpen className="w-[15px] h-[15px]" />
                           </button>
                         )}
                         {isAdmin && onEdit && (
@@ -441,7 +428,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                             className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-track transition-colors"
                             title="Sửa dòng xuất"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-[14px] h-[14px]" />
                           </button>
                         )}
                         {isAdmin && onDelete && (
@@ -451,7 +438,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
                             className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-pdf-text hover:bg-pdf-bg transition-colors"
                             title="Xóa dòng xuất"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-[14px] h-[14px]" />
                           </button>
                         )}
                       </div>

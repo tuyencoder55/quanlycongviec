@@ -1083,7 +1083,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
             {/* 2. Nhóm hình ảnh đính kèm trong ngày */}
             {dayImages.length > 0 && (
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2.5 pt-4 border-t border-[var(--border)]">
                 <div className="text-[11px] font-mono text-dot-mold font-semibold uppercase tracking-wider flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <FileImage className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -1115,7 +1115,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             )}
 
             {/* 3. Nhóm file xuất PDF trực tiếp nằm ở thư mục ngày */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2.5 pt-4 border-t border-[var(--border)]">
               <div className="text-[11px] font-mono text-muted-text font-medium uppercase tracking-wider flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-pdf-text" strokeWidth={1.8} />
@@ -1124,7 +1124,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
                 <div className="flex items-center gap-3">
                   {dayPdfs.length > 0 && (
-                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground text-[11px] normal-case select-none">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-text hover:text-text text-[12px] font-sans normal-case select-none">
                       <input
                         type="checkbox"
                         checked={
@@ -1132,16 +1132,25 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                           dayPdfs.every((p) => selectedFileIds.includes(p.id))
                         }
                         onChange={() => handleSelectAllFiles(dayPdfs)}
-                        className="w-3.5 h-3.5 rounded border-border text-primary cursor-pointer accent-primary"
+                        className="w-3.5 h-3.5 rounded-[4px] border-[var(--border-strong)] cursor-pointer accent-primary"
                       />
                       <span>Chọn tất cả ({dayPdfs.length})</span>
                     </label>
                   )}
-                  <span className="text-[10px] text-muted-foreground/80 font-normal">
-                    {dayPdfs.length} file
-                  </span>
                 </div>
               </div>
+
+              {/* Hàng tiêu đề cột thẳng hàng theo hình Dashboard đầy đủ (Dark & Light) */}
+              {dayPdfs.length > 0 && (
+                <div className="hidden lg:grid grid-cols-[minmax(0,1fr)_104px_96px_132px_90px_136px] items-center gap-3 px-3.5 pt-1 pb-0.5 text-[12px] text-subtle font-medium select-none">
+                  <span className="pl-[86px]">Tên file</span>
+                  <span>Bảng</span>
+                  <span>Khuôn</span>
+                  <span>PO</span>
+                  <span>Ngày</span>
+                  <span />
+                </div>
+              )}
 
               {dayPdfs.length === 0 && dayImages.length === 0 && dayContents.subfolders.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-xs bg-card/40 rounded-xl border border-dashed border-border space-y-2">
@@ -1274,16 +1283,16 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             )}
 
             {/* File PDF trong thư mục con */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
+            <div className="space-y-2.5 pt-4 border-t border-[var(--border)]">
+              <div className="text-[11px] font-mono text-muted-text font-medium uppercase tracking-wider flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-rose-400" />
+                  <FileText className="w-3.5 h-3.5 text-pdf-text" strokeWidth={1.8} />
                   <span>Danh Sách File Xuất Trong Thư Mục "{currentSubfolder}"</span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   {subfolderPdfs.length > 0 && (
-                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground text-[11px] normal-case select-none">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-muted-text hover:text-text text-[12px] font-sans normal-case select-none">
                       <input
                         type="checkbox"
                         checked={
@@ -1291,16 +1300,24 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                           subfolderPdfs.every((p) => selectedFileIds.includes(p.id))
                         }
                         onChange={() => handleSelectAllFiles(subfolderPdfs)}
-                        className="w-3.5 h-3.5 rounded border-border text-primary cursor-pointer accent-primary"
+                        className="w-3.5 h-3.5 rounded-[4px] border-[var(--border-strong)] cursor-pointer accent-primary"
                       />
                       <span>Chọn tất cả ({subfolderPdfs.length})</span>
                     </label>
                   )}
-                  <span className="text-[10px] text-muted-foreground/80 font-normal">
-                    {subfolderPdfs.length} file
-                  </span>
                 </div>
               </div>
+
+              {subfolderPdfs.length > 0 && (
+                <div className="hidden lg:grid grid-cols-[minmax(0,1fr)_104px_96px_132px_90px_136px] items-center gap-3 px-3.5 pt-1 pb-0.5 text-[12px] text-subtle font-medium select-none">
+                  <span className="pl-[86px]">Tên file</span>
+                  <span>Bảng</span>
+                  <span>Khuôn</span>
+                  <span>PO</span>
+                  <span>Ngày</span>
+                  <span />
+                </div>
+              )}
 
               {subfolderPdfs.length === 0 && subfolderImages.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground text-xs bg-card/40 rounded-xl border border-dashed border-border space-y-2">

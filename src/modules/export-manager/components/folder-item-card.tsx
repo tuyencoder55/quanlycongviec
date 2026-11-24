@@ -24,7 +24,6 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Nhãn loại thư mục hiển thị tinh tế (song ngữ Việt - Trung chuẩn thứ tự thời gian)
   const getSubLabel = () => {
     switch (type) {
       case 'year':
@@ -88,10 +87,10 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none ${
+      className={`group relative flex items-center justify-between p-3 rounded-[12px] border transition-colors cursor-pointer select-none ${
         isDragOver
-          ? 'border-emerald-400 bg-emerald-500/20 ring-2 ring-emerald-500/60 shadow-lg scale-[1.02]'
-          : 'border-border/60 bg-card/40 hover:bg-card hover:border-amber-500/40 hover:shadow-md'
+          ? 'border-dot-mold bg-emerald-500/10 ring-2 ring-dot-mold/40'
+          : 'border-[var(--border)] bg-row hover:bg-row-hover hover:border-[var(--border-strong)]'
       }`}
       title={
         isDragOver
@@ -100,43 +99,42 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
       }
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* Icon thư mục phong cách Windows Explorer hiện đại */}
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-xs ${
+          className={`w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors shrink-0 ${
             isDragOver
-              ? 'bg-emerald-500/30 border border-emerald-400 text-emerald-300 scale-110 animate-pulse'
-              : 'bg-gradient-to-tr from-amber-500/15 to-yellow-500/10 border border-amber-500/25 text-amber-400 group-hover:scale-105 group-hover:from-amber-500/25 group-hover:to-yellow-500/20'
+              ? 'bg-emerald-500/20 text-dot-mold'
+              : 'bg-tag-po-bg text-tag-po-text'
           }`}
         >
           {isDragOver ? (
-            <ArrowDownToLine className="w-5 h-5 text-emerald-300" />
+            <ArrowDownToLine className="w-[18px] h-[18px]" strokeWidth={1.8} />
           ) : (
-            <Folder className="w-5 h-5 fill-amber-400/20" />
+            <Folder className="w-[18px] h-[18px]" strokeWidth={1.8} />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
           <div
-            className={`text-xs font-semibold transition-colors truncate font-mono ${
-              isDragOver ? 'text-emerald-300' : 'text-foreground group-hover:text-amber-400'
+            className={`text-[13px] font-semibold transition-colors truncate font-mono ${
+              isDragOver ? 'text-dot-mold' : 'text-text'
             }`}
           >
             {name}
           </div>
-          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+          <div className="text-[11px] text-muted-text flex items-center gap-1.5 mt-0.5">
             {isDragOver ? (
-              <span className="text-emerald-400 font-medium animate-pulse">
+              <span className="text-dot-mold font-medium">
                 Thả chuột để chuyển file vào đây...
               </span>
             ) : (
               <>
                 <span>{getSubLabel()}</span>
-                <span>•</span>
-                <span className="font-mono text-muted-foreground/80">{itemCount} mục</span>
+                <span className="text-faint">•</span>
+                <span className="font-mono text-subtle">{itemCount} mục</span>
                 {updatedAt && (
                   <>
-                    <span>•</span>
-                    <span className="hidden sm:inline font-mono text-[9px]">{updatedAt}</span>
+                    <span className="text-faint">•</span>
+                    <span className="hidden sm:inline font-mono text-[10px] text-subtle">{updatedAt}</span>
                   </>
                 )}
               </>
@@ -146,7 +144,6 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
       </div>
 
       <div className="flex items-center gap-1 shrink-0 ml-2">
-        {/* Nút 3 chấm mở tùy chọn chuột phải cho màn hình cảm ứng hoặc click nhanh */}
         {isAdmin && onFolderContextMenu && (
           <button
             type="button"
@@ -154,19 +151,20 @@ export const FolderItemCard: React.FC<FolderItemCardProps> = ({
               e.stopPropagation();
               onFolderContextMenu(e, name, type, itemCount);
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-opacity"
+            className="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center text-subtle hover:text-text hover:bg-track rounded-[8px] transition-all"
             title="Tùy chọn thư mục (Xóa, quản lý)"
           >
-            <MoreVertical className="w-3.5 h-3.5" />
+            <MoreVertical className="w-3.5 h-3.5" strokeWidth={1.8} />
           </button>
         )}
 
         <ChevronRight
-          className={`w-4 h-4 transition-all shrink-0 ${
+          className={`w-4 h-4 transition-transform shrink-0 ${
             isDragOver
-              ? 'text-emerald-400 translate-x-1'
-              : 'text-muted-foreground/50 group-hover:text-amber-400 group-hover:translate-x-0.5'
+              ? 'text-dot-mold translate-x-0.5'
+              : 'text-faint group-hover:text-subtle group-hover:translate-x-0.5'
           }`}
+          strokeWidth={1.8}
         />
       </div>
     </div>

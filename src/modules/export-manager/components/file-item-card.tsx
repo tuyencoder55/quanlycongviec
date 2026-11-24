@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import type { ExportItem } from '../types';
 import { formatDate } from '../../../lib/utils';
 import { formatBytes } from '../utils/image-optimizer';
-import { Button } from '../../../components/ui/button';
 import {
   FileText,
   FileImage,
   Copy,
   Check,
-  Edit2,
+  Pencil,
   Trash2,
   Calendar,
   Eye,
@@ -63,7 +62,6 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Nếu click vào checkbox hoặc nút thì bỏ qua
     if (onToggleSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
       e.stopPropagation();
       onToggleSelect(item.id, e.shiftKey);
@@ -88,18 +86,19 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
       draggable={true}
       onDragStart={handleDragStart}
       onClick={handleCardClick}
-      className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing select-none ${
+      className={`group relative flex items-center justify-between gap-3.5 py-3 pl-3.5 pr-3 rounded-[12px] border transition-colors cursor-grab active:cursor-grabbing select-none ${
         isHighlighted
-          ? 'border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/70 shadow-lg shadow-amber-500/10 animate-in fade-in'
+          ? 'border-dot-po bg-tag-po-bg ring-2 ring-dot-po/40'
           : isSelected
-          ? 'border-primary bg-primary/10 ring-1 ring-primary/40 shadow-xs'
-          : 'border-border/60 bg-card/30 hover:bg-card hover:border-border'
-      } ${hasImage ? 'hover:border-emerald-500/40 hover:shadow-xs' : ''}`}
+          ? 'border-primary/35 bg-primary/[0.08]'
+          : 'border-[var(--border)] bg-row hover:bg-row-hover hover:border-[var(--border-strong)]'
+      }`}
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* CHECKBOX CHỌN FILE VÀ TAY CẦM KÉO THẢ */}
+      {/* Bên trái: Checkbox + Tay kéo + Ô PDF/Ảnh + Nội dung 2 dòng */}
+      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+        {/* Ô tick chọn & tay kéo 6 chấm */}
         <div
-          className="flex items-center gap-1.5 shrink-0"
+          className="flex items-center gap-2 shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
           {onToggleSelect && (
@@ -110,27 +109,27 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
                 const nativeEvent = e.nativeEvent as MouseEvent;
                 onToggleSelect(item.id, Boolean(nativeEvent?.shiftKey));
               }}
-              className="w-4 h-4 rounded border-border text-primary cursor-pointer focus:ring-1 focus:ring-primary accent-primary"
+              className="w-4 h-4 rounded-[4px] border-[var(--border-strong)] cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-row"
               title="Chọn file này"
             />
           )}
 
           <div
-            className="text-muted-foreground/40 group-hover:text-muted-foreground/80 cursor-grab"
+            className="text-faint group-hover:text-subtle cursor-grab transition-colors"
             title="Nắm kéo file thả vào thư mục"
           >
-            <GripVertical className="w-3.5 h-3.5" />
+            <GripVertical className="w-[15px] h-[15px]" strokeWidth={1.8} />
           </div>
         </div>
 
-        {/* ICON HOẶC THUMBNAIL ĐƠN XUẤT */}
+        {/* Ô PDF 44x44 hoặc Thumbnail đơn xuất */}
         {hasImage && item.image_url && !imageError ? (
           <div
             onClick={(e) => {
               e.stopPropagation();
               onViewImage?.(item);
             }}
-            className="relative w-12 h-12 rounded-xl overflow-hidden border border-emerald-500/40 bg-emerald-950/20 shrink-0 shadow-xs group-hover:scale-105 transition-transform cursor-pointer"
+            className="relative w-11 h-11 rounded-[10px] overflow-hidden border border-[var(--border-strong)] bg-track shrink-0 cursor-pointer"
             title="Click để phóng to xem đơn xuất đối chiếu"
           >
             <img
@@ -139,170 +138,162 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
               onError={() => setImageError(true)}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Eye className="w-4 h-4 text-white" />
+            <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Eye className="w-4 h-4 text-white" strokeWidth={1.8} />
             </div>
           </div>
         ) : isImageOnly ? (
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center text-emerald-400 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-            <FileImage className="w-5 h-5 text-emerald-400" />
-            <span className="text-[8px] font-bold font-mono tracking-tighter text-emerald-400 mt-[-2px]">
-              ĐƠN
-            </span>
+          <div className="w-11 h-11 rounded-[10px] bg-track border border-[var(--border)] flex flex-col items-center justify-center text-subtle shrink-0">
+            <FileImage className="w-[18px] h-[18px]" strokeWidth={1.8} />
           </div>
         ) : (
-          /* Icon file PDF chuyên nghiệp (đỏ Acrobat) */
-          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex flex-col items-center justify-center text-rose-500 shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-            <FileText className="w-5 h-5 text-rose-500" />
-            <span className="text-[8px] font-bold font-mono tracking-tighter text-rose-400 mt-[-2px]">
+          <div className="w-11 h-11 rounded-[10px] bg-pdf-bg border border-pdf-border flex flex-col items-center justify-center text-pdf-text shrink-0">
+            <FileText className="w-[16px] h-[16px]" strokeWidth={1.8} />
+            <span className="text-[8px] font-bold font-mono tracking-wider leading-none mt-0.5">
               PDF
             </span>
           </div>
         )}
 
-        {/* Thông tin file / đơn xuất */}
+        {/* Phần nội dung 2 dòng theo DESIGN.md mục 5 */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Dòng trên: tên file mono 13.5px/500, 1 dòng cắt "..." + nút copy nhỏ 24px */}
+          <div className="flex items-center gap-1.5 min-w-0">
             <span
-              className={`text-xs font-semibold font-mono truncate max-w-[280px] sm:max-w-md block transition-colors ${
-                isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
-              }`}
+              className="font-mono text-[13.5px] font-medium text-text truncate leading-snug"
               title={item.full_name}
             >
               {item.full_name}
             </span>
+
             {isHighlighted && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-400 text-slate-950 shadow-xs animate-pulse">
+              <span className="px-1.5 py-0.5 rounded-[6px] text-[10px] font-mono font-semibold bg-dot-po text-on-primary shrink-0">
                 Đang tìm
               </span>
             )}
+
             <button
+              type="button"
               onClick={handleCopy}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-accent transition-colors"
-              title="Sao chép tên"
+              className="w-6 h-6 rounded-[6px] flex items-center justify-center text-subtle hover:text-text hover:bg-track transition-colors shrink-0"
+              title="Sao chép tên file"
             >
               {copied ? (
-                <Check className="w-3 h-3 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-dot-mold" strokeWidth={2} />
               ) : (
-                <Copy className="w-3 h-3" />
+                <Copy className="w-3.5 h-3.5" strokeWidth={1.8} />
               )}
             </button>
           </div>
 
-          {/* Chip metadata: Mã Bảng, Khuôn, PO, Trạng thái đơn xuất */}
-          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+          {/* Dòng dưới: nhãn mã bảng, khuôn, PO, ngày và ghi chú */}
+          <div className="flex items-center gap-2 flex-wrap mt-1">
             {isImageOnly ? (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-emerald-500/10 text-dot-mold">
                 Đơn xuất xưởng
               </span>
             ) : (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-mono font-medium bg-tag-board-bg text-tag-board-text">
                 {item.board_code}
               </span>
             )}
 
             {!isImageOnly && item.is_legacy && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-sans font-medium bg-secondary/80 text-muted-foreground border border-border/50">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-medium bg-track text-muted-text">
                 Hồ sơ cũ
               </span>
             )}
 
             {item.mold_code && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-mono font-medium bg-emerald-500/10 text-dot-mold">
                 {item.mold_code}
               </span>
             )}
 
             {item.ref_value && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-mono font-medium bg-tag-po-bg text-tag-po-text">
                 {item.ref_kind === 'po' ? `PO ${item.ref_value}` : item.ref_value}
               </span>
             )}
 
             {item.file_size_bytes && (
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-secondary text-foreground border border-border/50">
+              <span className="px-2 py-0.5 rounded-[6px] text-[11.5px] font-mono font-medium bg-track text-muted-text">
                 {formatBytes(item.file_size_bytes)}
               </span>
             )}
 
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono ml-1">
-              <Calendar className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1 text-[12px] text-muted-text font-mono">
+              <Calendar className="w-3.5 h-3.5 text-subtle" strokeWidth={1.8} />
               <span>{formatDate(item.exported_at)}</span>
-            </div>
+            </span>
 
             {item.note && (
-              <span className="text-[10px] text-muted-foreground truncate max-w-[150px] hidden md:inline">
-                • {item.note}
+              <span className="text-[12px] text-subtle truncate max-w-[260px] hidden md:inline">
+                {item.note}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* NÚT THAO TÁC XEM ĐƠN XUẤT VÀ QUẢN LÝ */}
-      <div className="flex items-center gap-1.5 ml-2 shrink-0">
-        {/* NÚT BẤM XEM ĐƠN XUẤT NỔI BẬT NẾU CÓ ẢNH */}
+      {/* Cụm nút bên phải: Xem đơn / Kèm đơn, Sửa, Xóa */}
+      <div className="flex items-center gap-1 shrink-0">
         {hasImage && onViewImage && (
-          <Button
-            size="sm"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onViewImage(item);
             }}
-            className="h-7 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 transition-all"
+            className="h-8 px-3 rounded-full text-[12px] font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-dot-mold border border-dot-mold/30 inline-flex items-center gap-1.5 transition-colors"
             title="Bấm để xem ảnh đơn xuất bảng/khuôn đối chiếu"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span className="font-semibold">Xem đơn xuất</span>
-          </Button>
+            <Eye className="w-[15px] h-[15px]" strokeWidth={1.8} />
+            <span>Xem đơn xuất</span>
+          </button>
         )}
 
-        {/* Nút đính kèm ảnh đơn xuất nếu chưa có */}
         {!hasImage && isAdmin && onAttachImage && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onAttachImage(item);
             }}
-            className="h-7 px-2 rounded-lg text-[11px] text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 flex items-center gap-1"
+            className="h-8 px-2.5 rounded-[8px] text-[12px] font-medium text-muted-text hover:text-text hover:bg-track inline-flex items-center gap-1.5 transition-colors"
             title="Đính kèm ảnh chụp đơn xuất bảng/khuôn vào dòng này"
           >
-            <Paperclip className="w-3 h-3" />
+            <Paperclip className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
             <span className="hidden sm:inline">Kèm đơn</span>
-          </Button>
+          </button>
         )}
 
-        {/* Hành động sửa/xóa cho Admin */}
         {isAdmin && onEdit && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(item);
             }}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-track transition-colors"
             title="Sửa thông tin"
           >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
+            <Pencil className="w-[15px] h-[15px]" strokeWidth={1.8} />
+          </button>
         )}
 
         {isAdmin && onDelete && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(item.id);
             }}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded-lg"
+            className="w-8 h-8 rounded-[8px] flex items-center justify-center text-subtle hover:text-pdf-text hover:bg-pdf-bg transition-colors"
             title="Xóa dòng"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+            <Trash2 className="w-[15px] h-[15px]" strokeWidth={1.8} />
+          </button>
         )}
       </div>
     </div>

@@ -8,40 +8,75 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // Theme Tailwind/shadcn hiện tại (nối sang bảng màu DESIGN.md qua HSL để giữ hỗ trợ /opacity)
+        border: 'hsl(var(--hsl-border))',
+        input: 'hsl(var(--hsl-input))',
+        ring: 'hsl(var(--hsl-ring))',
+        background: 'hsl(var(--hsl-background))',
+        foreground: 'hsl(var(--hsl-foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: 'hsl(var(--hsl-primary))',
+          foreground: 'hsl(var(--hsl-primary-foreground))',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'hsl(var(--hsl-secondary))',
+          foreground: 'hsl(var(--hsl-secondary-foreground))',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'hsl(var(--hsl-destructive))',
+          foreground: 'hsl(var(--hsl-destructive-foreground))',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'hsl(var(--hsl-muted))',
+          foreground: 'hsl(var(--hsl-muted-foreground))',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'hsl(var(--hsl-accent))',
+          foreground: 'hsl(var(--hsl-accent-foreground))',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'hsl(var(--hsl-popover))',
+          foreground: 'hsl(var(--hsl-popover-foreground))',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'hsl(var(--hsl-card))',
+          foreground: 'hsl(var(--hsl-card-foreground))',
         },
-        // Màu bổ trợ theo Design System Obsidian Nexus
+
+        // Biến màu trực tiếp từ mục 3 của .agent/DESIGN.md
+        bg: 'var(--bg)',
+        surface: 'var(--surface)',
+        row: 'var(--row)',
+        'row-hover': 'var(--row-hover)',
+        'border-token': 'var(--border)',
+        'border-strong': 'var(--border-strong)',
+        track: 'var(--track)',
+        selected: 'var(--selected)',
+        'selected-text': 'var(--selected-text)',
+        text: 'var(--text)',
+        'muted-text': 'var(--muted)',
+        subtle: 'var(--subtle)',
+        faint: 'var(--faint)',
+        'on-primary': 'var(--on-primary)',
+
+        'ai-bg': 'var(--ai-bg)',
+        'ai-border': 'var(--ai-border)',
+        'ai-text': 'var(--ai-text)',
+
+        'tag-board-bg': 'var(--tag-board-bg)',
+        'tag-board-text': 'var(--tag-board-text)',
+        'tag-po-bg': 'var(--tag-po-bg)',
+        'tag-po-text': 'var(--tag-po-text)',
+
+        'dot-board': 'var(--dot-board)',
+        'dot-mold': 'var(--dot-mold)',
+        'dot-po': 'var(--dot-po)',
+
+        'pdf-bg': 'var(--pdf-bg)',
+        'pdf-border': 'var(--pdf-border)',
+        'pdf-text': 'var(--pdf-text)',
+
+        // Màu bổ trợ giữ tương thích với các component hiện có
         emerald: {
           DEFAULT: '#10b981',
           bg: 'rgba(16, 185, 129, 0.1)',
@@ -63,8 +98,8 @@ export default {
         '2xl': 'calc(var(--radius) + 8px)',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
     },
   },

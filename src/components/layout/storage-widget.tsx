@@ -22,40 +22,40 @@ export const StorageWidget: React.FC<StorageWidgetProps> = ({ compact = false })
 
   const percent = Math.min(Math.max(stats.usage_percentage, 0.5), 100);
 
-  // Chọn màu theo mức độ dung lượng
+  // Chọn màu theo mức độ dung lượng dựa trên token DESIGN.md
   const colorConfig =
     percent > 80
-      ? { bar: 'bg-rose-500', text: 'text-rose-400', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20' }
+      ? { bar: 'bg-pdf-text', text: 'text-pdf-text' }
       : percent > 50
-      ? { bar: 'bg-amber-500', text: 'text-amber-400', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20' }
-      : { bar: 'bg-emerald-500', text: 'text-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+      ? { bar: 'bg-dot-po', text: 'text-dot-po' }
+      : { bar: 'bg-dot-mold', text: 'text-dot-mold' };
 
   return (
     <>
       <div
         onClick={() => setIsDetailOpen(true)}
-        className="group p-2.5 rounded-xl border border-border/60 bg-secondary/40 hover:bg-secondary/70 hover:border-primary/40 transition-all cursor-pointer space-y-2 select-none"
+        className="group p-3 rounded-[12px] border border-[var(--border)] bg-surface hover:border-[var(--border-strong)] transition-colors cursor-pointer space-y-2 select-none"
         title="Nhấp để xem chi tiết bộ nhớ Supabase"
       >
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground group-hover:text-foreground transition-colors font-medium">
-            <Database className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px]">Bộ nhớ Supabase</span>
+        <div className="flex items-center justify-between text-[12px]">
+          <div className="flex items-center gap-1.5 text-muted-text group-hover:text-text transition-colors font-medium">
+            <Database className="w-3.5 h-3.5 text-dot-board" strokeWidth={1.8} />
+            <span>Bộ nhớ Supabase</span>
           </div>
-          <span className={`font-mono text-[11px] font-semibold ${colorConfig.text}`}>
+          <span className={`font-mono text-[12px] font-semibold ${colorConfig.text}`}>
             {stats.usage_percentage}%
           </span>
         </div>
 
         {/* Thanh Progress Bar */}
-        <div className="w-full h-1.5 bg-background/80 rounded-full overflow-hidden border border-border/40">
+        <div className="w-full h-1 bg-track rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${colorConfig.bar}`}
             style={{ width: `${percent}%` }}
           />
         </div>
 
-        <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+        <div className="flex items-center justify-between text-[11px] font-mono text-subtle">
           <span>{stats.db_size_pretty}</span>
           <span>{stats.limit_pretty}</span>
         </div>

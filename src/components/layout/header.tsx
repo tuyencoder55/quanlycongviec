@@ -1,9 +1,7 @@
 import React from 'react';
 import { Search, Menu, Sun, Moon } from 'lucide-react';
-import { useAuth } from '../../hooks/use-auth';
 import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import type { ActiveTab } from './sidebar';
 
 interface HeaderProps {
@@ -25,72 +23,70 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab = 'kanban',
   searchTerm,
   onSearchChange,
-  onNewTaskClick,
   onMobileMenuToggle,
 }) => {
-  const { role, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const currentTabInfo = TAB_TITLES[activeTab] || TAB_TITLES.kanban;
 
   return (
-    <header className="h-13 border-b border-border/50 bg-background/80 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between shrink-0 z-30">
-      {/* Cụm điều hướng & Breadcrumb bên trái */}
+    <header className="h-14 border-b border-[var(--border)] bg-bg/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 z-30">
+      {/* Cụm điều hướng & Breadcrumb bên trái theo DESIGN.md mục 5 */}
       <div className="flex items-center gap-3 min-w-0">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMobileMenuToggle}
-          className="lg:hidden w-8 h-8 text-muted-foreground hover:text-foreground"
+          className="lg:hidden w-9 h-9 rounded-[8px] text-subtle hover:text-text hover:bg-row-hover"
         >
-          <Menu className="w-4 h-4" />
+          <Menu className="w-[17px] h-[17px]" strokeWidth={1.8} />
         </Button>
 
-        {/* Breadcrumb phẳng kiểu Linear */}
-        <div className="flex items-center gap-2 text-xs font-medium">
-          <span className="text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[13px] font-medium text-muted-text hidden sm:inline">
             Nexus
           </span>
-          <span className="text-muted-foreground/40 hidden sm:inline">/</span>
-          <span className="text-foreground font-semibold flex items-center gap-1.5">
+          <span className="text-[13px] text-faint hidden sm:inline">/</span>
+          <span className="text-[15px] font-semibold text-text tracking-[-0.01em] truncate">
             {currentTabInfo.title}
           </span>
-          <span className="text-[11px] text-muted-foreground font-normal hidden md:inline">
-            • {currentTabInfo.subtitle}
+          <span className="text-[12px] text-muted-text font-normal hidden md:inline truncate">
+            {currentTabInfo.subtitle}
           </span>
         </div>
       </div>
 
-      {/* Cụm công cụ bên phải: Tìm kiếm nhanh, Theme, Nút thêm việc */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Ô tìm kiếm nhanh với phím tắt ⌘K */}
-        <div className="relative w-44 sm:w-60 md:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {/* Cụm công cụ bên phải: Ô tìm nhanh 300px + Nút đổi Sáng / Tối */}
+      <div className="flex items-center gap-2.5">
+        <div className="relative w-44 sm:w-64 md:w-[300px]">
+          <Search
+            className="w-[15px] h-[15px] absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none"
+            strokeWidth={1.8}
+          />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Tìm mã bảng, khuôn, PO..."
-            className="w-full h-8 bg-card/60 border border-border/60 rounded-lg pl-8 pr-10 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/80 focus:ring-1 focus:ring-primary/40 transition-all font-sans"
+            className="w-full h-9 bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] rounded-[10px] pl-9 pr-14 text-[13px] text-text placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors font-sans"
           />
-          <kbd className="hidden sm:inline-block absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground/70 bg-secondary/80 px-1 py-0.2 rounded border border-border/50">
-            ⌘K
+          <kbd className="hidden sm:inline-flex items-center absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-mono text-subtle bg-track px-1.5 py-0.5 rounded-[6px] border border-[var(--border)]">
+            Ctrl K
           </kbd>
         </div>
 
         {/* Nút chuyển đổi giao diện Sáng / Tối */}
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          type="button"
           onClick={toggleTheme}
-          className="w-8 h-8 text-muted-foreground hover:text-foreground rounded-lg"
+          className="w-9 h-9 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-row-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors"
           title={`Chuyển sang chế độ ${theme === 'dark' ? 'sáng' : 'tối'}`}
         >
           {theme === 'dark' ? (
-            <Sun className="w-3.5 h-3.5 text-amber-400" />
+            <Sun className="w-[17px] h-[17px]" strokeWidth={1.8} />
           ) : (
-            <Moon className="w-3.5 h-3.5 text-slate-700" />
+            <Moon className="w-[17px] h-[17px]" strokeWidth={1.8} />
           )}
-        </Button>
+        </button>
       </div>
     </header>
   );

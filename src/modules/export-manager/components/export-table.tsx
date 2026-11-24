@@ -147,10 +147,10 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="p-12 text-center rounded-xl border border-dashed border-border/50 bg-card/20">
-        <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-        <h4 className="text-xs font-semibold text-foreground">Không có dữ liệu xuất nào</h4>
-        <p className="text-[11px] text-muted-foreground mt-1">
+      <div className="p-12 text-center rounded-[12px] border border-dashed border-[var(--border-strong)] bg-surface">
+        <FileText className="w-8 h-8 text-faint mx-auto mb-2" strokeWidth={1.8} />
+        <h4 className="text-[13px] font-semibold text-text">Không có dữ liệu xuất nào</h4>
+        <p className="text-[12px] text-muted-text mt-1">
           Không tìm thấy dòng xuất khuôn bảng nào phù hợp với bộ lọc tìm kiếm hiện tại.
         </p>
       </div>
@@ -158,19 +158,19 @@ export const ExportTable: React.FC<ExportTableProps> = ({
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-border/50 bg-card/40">
+    <div className="w-full overflow-hidden rounded-[12px] bg-surface">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
-          {/* Header Bảng tính Google Sheets */}
+        <table className="w-full text-left border-collapse text-[13px]">
+          {/* Header Bảng tra cứu */}
           <thead>
-            <tr className="border-b border-border/80 bg-secondary/70 text-muted-foreground font-mono select-none">
-              <th className="py-2.5 px-3 w-12 text-center border-r border-border/50 font-semibold">
+            <tr className="border-b border-[var(--border)] bg-track text-muted-text font-mono text-[12px] select-none">
+              <th className="py-2.5 px-3 w-12 text-center border-r border-[var(--border)] font-medium">
                 #
               </th>
 
               <th
                 onClick={() => handleSort('board_code')}
-                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Mã Bảng</span>
@@ -180,7 +180,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('mold_code')}
-                className="py-2.5 px-3 w-28 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-28 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Mã Khuôn</span>
@@ -190,7 +190,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('ref_value')}
-                className="py-2.5 px-3 w-36 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-36 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Số PO / Ngày</span>
@@ -201,9 +201,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
               {/* 3 Cột ngày xuất riêng biệt cho Bảng, Khuôn và PO */}
               <th
                 onClick={() => handleSort('board_date')}
-                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
-                <div className="flex items-center gap-1.5 text-indigo-400">
+                <div className="flex items-center gap-1.5 text-tag-board-text">
                   <Layers className="w-3 h-3" />
                   <span>Ngày xuất Bảng</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
@@ -212,9 +212,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('mold_date')}
-                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
-                <div className="flex items-center gap-1.5 text-emerald-400">
+                <div className="flex items-center gap-1.5 text-dot-mold">
                   <Box className="w-3 h-3" />
                   <span>Ngày xuất Khuôn</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
@@ -223,9 +223,9 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('po_date')}
-                className="py-2.5 px-3 w-32 border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 w-32 border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
-                <div className="flex items-center gap-1.5 text-amber-400">
+                <div className="flex items-center gap-1.5 text-tag-po-text">
                   <Hash className="w-3 h-3" />
                   <span>Ngày xuất PO</span>
                   <ArrowUpDown className="w-3 h-3 opacity-60" />
@@ -234,7 +234,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
 
               <th
                 onClick={() => handleSort('full_name')}
-                className="py-2.5 px-3 min-w-[280px] border-r border-border/50 font-semibold hover:text-foreground cursor-pointer transition-colors"
+                className="py-2.5 px-3 min-w-[280px] border-r border-[var(--border)] font-medium hover:text-text cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Tên đầy đủ (Tên file gốc)</span>
@@ -243,7 +243,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
               </th>
 
               {(isAdmin || onRevealInFolder) && (
-                <th className="py-2.5 px-3 w-24 text-center font-semibold">
+                <th className="py-2.5 px-3 w-24 text-center font-medium">
                   Thao tác
                 </th>
               )}
@@ -251,7 +251,7 @@ export const ExportTable: React.FC<ExportTableProps> = ({
           </thead>
 
           {/* Dữ liệu các dòng Bảng tính */}
-          <tbody className="divide-y divide-border/50 font-mono">
+          <tbody className="divide-y divide-[var(--border)] font-mono">
             {sortedItems.map((item, index) => {
               const { boardDate, moldDate, poDate, isBoardLegacy } = getExportDates(item);
 

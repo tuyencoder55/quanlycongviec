@@ -36,7 +36,7 @@ export default function App() {
   }, [activeTab, features]);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden text-foreground">
+    <div className="flex h-screen w-full bg-bg overflow-hidden text-text">
       {/* Sidebar điều hướng */}
       <div
         className={`fixed inset-y-0 left-0 z-50 transform lg:static lg:translate-x-0 transition-transform duration-200 ease-in-out ${
@@ -68,7 +68,7 @@ export default function App() {
       )}
 
       {/* Vùng hiển thị nội dung chính */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-bg">
         <Header
           activeTab={activeTab}
           searchTerm={searchTerm}
@@ -81,9 +81,9 @@ export default function App() {
           onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="flex-1 overflow-hidden p-3 lg:p-4 flex flex-col min-h-0">
-          {/* Hiển thị Tab tương ứng - Tối ưu 100% diện tích làm việc */}
-          <div className="flex-1 min-h-0 flex flex-col">
+        <main className="flex-1 overflow-hidden px-4 py-4 sm:px-6 lg:px-8 lg:py-6 flex flex-col min-h-0">
+          {/* Nội dung căn giữa rộng tối đa 1280px theo DESIGN.md */}
+          <div className="flex-1 min-h-0 flex flex-col w-full max-w-[1280px] mx-auto">
             {activeTab === 'kanban' && features.showKanban && (
               <KanbanBoard
                 key={newTaskTrigger}

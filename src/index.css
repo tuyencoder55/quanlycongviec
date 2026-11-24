@@ -3,51 +3,126 @@
 @tailwind utilities;
 
 @layer base {
+  /* ==========================================================================
+     LIGHT THEME — Token màu theo mục 3 của .agent/DESIGN.md
+     ========================================================================== */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 239 84% 67%;
-    --radius: 0.75rem;
+    /* Biến màu DESIGN.md (Light) */
+    --bg:            #faf9f6;
+    --surface:       #ffffff;   /* ô thống kê, ô tìm kiếm, thanh thư mục */
+    --row:           #ffffff;
+    --row-hover:     #f6f4ef;
+    --border:        #e8e4dc;
+    --border-strong: #d9d4c9;
+    --track:         #efede7;   /* nền thanh chọn (segmented) */
+    --selected:      #ffffff;   /* mục đang chọn trong thanh chọn */
+    --selected-text: #1f1d1a;
+    --text:          #1f1d1a;
+    --muted:         #6b6760;
+    --subtle:        #8a857b;   /* icon phụ, tay kéo */
+    --faint:         #b5b0a5;   /* dấu "/" trong đường dẫn */
+
+    --primary:       #4b5bf5;
+    --on-primary:    #ffffff;
+
+    --ai-bg:         #edf1ff;
+    --ai-border:     #c9d3fb;
+    --ai-text:       #2f48b8;
+
+    --tag-board-bg:  #e8edff;
+    --tag-board-text:#2f48b8;
+    --tag-po-bg:     #fff1d6;
+    --tag-po-text:   #8a5a00;
+    --dot-board:     #3b5bdb;
+    --dot-mold:      #2b8a5f;
+    --dot-po:        #c47f00;
+
+    --pdf-bg:        #fdecec;
+    --pdf-border:    #f5c2c2;
+    --pdf-text:      #c92a2a;
+
+    /* Cầu nối HSL cho theme Tailwind/shadcn hiện tại (hỗ trợ độ mờ /opacity) */
+    --hsl-background:         45 33% 97%;   /* #faf9f6 */
+    --hsl-foreground:         36 9% 11%;    /* #1f1d1a */
+    --hsl-card:               0 0% 100%;    /* #ffffff */
+    --hsl-card-foreground:    36 9% 11%;
+    --hsl-popover:            0 0% 100%;
+    --hsl-popover-foreground: 36 9% 11%;
+    --hsl-primary:            234 89% 63%;  /* #4b5bf5 */
+    --hsl-primary-foreground: 0 0% 100%;    /* #ffffff */
+    --hsl-secondary:          45 20% 92%;   /* #efede7 */
+    --hsl-secondary-foreground: 36 9% 11%;
+    --hsl-muted:              45 20% 92%;   /* #efede7 */
+    --hsl-muted-foreground:   38 5% 40%;    /* #6b6760 */
+    --hsl-accent:             43 26% 95%;   /* #f6f4ef */
+    --hsl-accent-foreground:  36 9% 11%;
+    --hsl-destructive:        0 65% 48%;    /* #c92a2a */
+    --hsl-destructive-foreground: 0 0% 100%;
+    --hsl-border:             40 21% 89%;   /* #e8e4dc */
+    --hsl-input:              40 21% 89%;
+    --hsl-ring:               234 89% 63%;  /* #4b5bf5 */
+    --radius: 0.625rem;
   }
 
+  /* ==========================================================================
+     DARK THEME (mặc định) — Token màu theo mục 3 của .agent/DESIGN.md
+     ========================================================================== */
   .dark {
-    /* Minimalist Linear Palette - Trung tính, sắc nét, chống mỏi mắt cho cá nhân */
-    --background: 240 10% 4%;          /* #090a0f */
-    --foreground: 220 14% 93%;         /* #edeff4 */
-    --card: 240 6% 7.8%;               /* #121318 */
-    --card-foreground: 220 14% 93%;
-    --popover: 240 6% 8.5%;            /* #15161c */
-    --popover-foreground: 220 14% 93%;
-    --primary: 239 84% 67%;            /* #6366f1 Indigo */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 5% 12.5%;         /* #1d1e24 */
-    --secondary-foreground: 220 14% 90%;
-    --muted: 240 5% 12.5%;
-    --muted-foreground: 240 5% 58%;    /* #8f919a */
-    --accent: 240 5% 15%;              /* #23242c */
-    --accent-foreground: 220 14% 96%;
-    --destructive: 348 83% 60%;        /* #f43f5e Rose */
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 5% 14.5%;            /* #22232a - hairline mỏng tinh tế */
-    --input: 240 5% 15%;
-    --ring: 239 84% 67%;
-    --radius: 0.75rem;
+    /* Biến màu DESIGN.md (Dark) */
+    --bg:            #0b0c0f;
+    --surface:       #111317;
+    --row:           #101216;
+    --row-hover:     #14161b;
+    --border:        rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --track:         #111317;
+    --selected:      #23262e;
+    --selected-text: #ffffff;
+    --text:          #e8e9ec;
+    --muted:         #8e94a0;
+    --subtle:        #7a808b;
+    --faint:         #4a4f59;
+
+    --primary:       #4b5bf5;
+    --on-primary:    #ffffff;
+
+    --ai-bg:         rgba(154, 166, 255, 0.08);
+    --ai-border:     rgba(154, 166, 255, 0.35);
+    --ai-text:       #c3cbff;
+
+    --tag-board-bg:  rgba(154, 166, 255, 0.12);
+    --tag-board-text:#b4bdff;
+    --tag-po-bg:     rgba(242, 196, 107, 0.12);
+    --tag-po-text:   #f2c46b;
+    --dot-board:     #9aa6ff;
+    --dot-mold:      #5fd3a3;
+    --dot-po:        #f2c46b;
+
+    --pdf-bg:        rgba(255, 107, 107, 0.10);
+    --pdf-border:    rgba(255, 107, 107, 0.22);
+    --pdf-text:      #ff8a8a;
+
+    /* Cầu nối HSL cho theme Tailwind/shadcn hiện tại (hỗ trợ độ mờ /opacity) */
+    --hsl-background:         225 15% 5%;   /* #0b0c0f */
+    --hsl-foreground:         225 11% 92%;  /* #e8e9ec */
+    --hsl-card:               220 15% 8%;   /* #111317 */
+    --hsl-card-foreground:    225 11% 92%;
+    --hsl-popover:            220 15% 8%;   /* #111317 */
+    --hsl-popover-foreground: 225 11% 92%;
+    --hsl-primary:            234 89% 63%;  /* #4b5bf5 */
+    --hsl-primary-foreground: 0 0% 100%;    /* #ffffff */
+    --hsl-secondary:          220 14% 11%;  /* ~#181a20 */
+    --hsl-secondary-foreground: 225 11% 92%;
+    --hsl-muted:              220 14% 11%;
+    --hsl-muted-foreground:   220 9% 59%;   /* #8e94a0 */
+    --hsl-accent:             224 14% 16%;  /* #23262e */
+    --hsl-accent-foreground:  0 0% 100%;    /* #ffffff */
+    --hsl-destructive:        0 100% 77%;   /* #ff8a8a */
+    --hsl-destructive-foreground: 0 0% 100%;
+    --hsl-border:             220 10% 14%;
+    --hsl-input:              220 10% 15%;
+    --hsl-ring:               234 89% 63%;  /* #4b5bf5 */
+    --radius: 0.625rem;
   }
 }
 
@@ -56,12 +131,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Thanh cuộn tối giản tùy chỉnh */
+/* Thanh cuộn tối giản tùy chỉnh theo token sáng/tối */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -72,10 +147,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--border-strong);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--faint);
 }

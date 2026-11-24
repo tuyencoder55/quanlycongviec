@@ -11,16 +11,11 @@ import type {
   ExportDateFilter,
   ExportViewMode,
 } from './types';
-import { Button } from '../../components/ui/button';
 import {
-  Search,
+  ListFilter,
   Plus,
   RefreshCw,
   Download,
-  Layers,
-  Box,
-  Hash,
-  Database,
   Sparkles,
   Folder,
   Table,
@@ -310,102 +305,123 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   };
 
   return (
-    <div className="flex flex-col h-full space-y-3">
-      {/* Thanh số liệu thống kê nhanh gọn kiểu Linear pills */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 py-1 px-0.5">
-        {/* Nhóm chip thống kê mini */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card/60 border border-border/50 text-xs">
-            <Database className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Tổng xuất:</span>
-            <span className="font-mono font-bold text-foreground">{stats.total}</span>
+    <div className="flex flex-col h-full space-y-5">
+      {/* Hàng 1: 4 ô thống kê + cụm nút hành động theo DESIGN.md mục 5 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+        {/* Khối 4 ô thống kê (nền --surface, viền --border, bo 10px/12px) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 bg-surface border border-[var(--border)] rounded-[12px] divide-y sm:divide-y-0 sm:divide-x divide-[var(--border)] shrink-0">
+          <div className="px-4 py-2.5 min-w-[104px]">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-text">
+              <span className="w-[6px] h-[6px] rounded-full bg-text shrink-0" />
+              <span>Tổng xuất</span>
+            </div>
+            <div className="font-mono text-[18px] font-semibold text-text leading-tight mt-0.5 tabular-nums">
+              {stats.total}
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs">
-            <Layers className="w-3 h-3" />
-            <span>Bảng:</span>
-            <span className="font-mono font-bold">{stats.boardCount}</span>
+          <div className="px-4 py-2.5 min-w-[104px]">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-text">
+              <span className="w-[7px] h-[7px] rounded-full bg-dot-board shrink-0" />
+              <span>Bảng</span>
+            </div>
+            <div className="font-mono text-[18px] font-semibold text-text leading-tight mt-0.5 tabular-nums">
+              {stats.boardCount}
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-            <Box className="w-3 h-3" />
-            <span>Khuôn:</span>
-            <span className="font-mono font-bold">{stats.moldCount}</span>
+          <div className="px-4 py-2.5 min-w-[104px]">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-text">
+              <span className="w-[7px] h-[7px] rounded-full bg-dot-mold shrink-0" />
+              <span>Khuôn</span>
+            </div>
+            <div className="font-mono text-[18px] font-semibold text-text leading-tight mt-0.5 tabular-nums">
+              {stats.moldCount}
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
-            <Hash className="w-3 h-3" />
-            <span>PO:</span>
-            <span className="font-mono font-bold">{stats.poCount}</span>
+          <div className="px-4 py-2.5 min-w-[104px]">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-text">
+              <span className="w-[7px] h-[7px] rounded-full bg-dot-po shrink-0" />
+              <span>PO</span>
+            </div>
+            <div className="font-mono text-[18px] font-semibold text-text leading-tight mt-0.5 tabular-nums">
+              {stats.poCount}
+            </div>
           </div>
         </div>
 
-        {/* Nút hành động bên phải */}
-        <div className="flex items-center gap-1.5 ml-auto">
-          <Button
-            variant="outline"
-            size="sm"
+        {/* Cụm nút hành động bên phải (nút lớn cao 40px, bo 10px) */}
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          <button
+            type="button"
             onClick={handleExportCSV}
-            className="h-8 text-xs gap-1.5 border-border/60 rounded-lg bg-card/40 text-muted-foreground hover:text-foreground"
+            className="h-10 px-3.5 rounded-[10px] bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-row-hover text-[13px] font-medium text-text inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors"
             title="Tải về file CSV để mở bằng Excel hoặc Google Sheets"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <Download className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
             <span className="hidden sm:inline">Xuất CSV</span>
-          </Button>
+          </button>
 
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={() => refetch()}
             disabled={isLoading}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+            className="h-10 w-10 rounded-[10px] bg-transparent hover:bg-row-hover text-subtle hover:text-text inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors disabled:opacity-40"
             title="Tải lại dữ liệu"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
+            <RefreshCw
+              className={`w-[16px] h-[16px] ${isLoading ? 'animate-spin' : ''}`}
+              strokeWidth={1.8}
+            />
+          </button>
 
           {isAdmin && (
             <>
-              <Button
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setIsAiScannerOpen(true)}
-                className="h-8 text-xs gap-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 shadow-xs px-2.5 transition-all"
+                className="h-10 px-3.5 rounded-[10px] bg-ai-bg border border-ai-border text-ai-text hover:brightness-105 text-[13px] font-medium inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
                 title="Chụp màn hình và dán Ctrl+V để AI tự động nhận diện và đối chiếu"
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span>AI Quét ảnh (Ctrl+V)</span>
-              </Button>
+                <Sparkles className="w-[15px] h-[15px]" strokeWidth={1.8} />
+                <span>AI Quét ảnh</span>
+                <span className="font-mono text-[11px] opacity-80 hidden sm:inline">Ctrl+V</span>
+              </button>
 
-              <Button
-                size="sm"
+              <button
+                type="button"
                 onClick={handleOpenAdd}
-                className="h-8 text-xs gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
+                className="h-10 px-4 rounded-[10px] bg-primary hover:brightness-110 text-on-primary text-[13px] font-semibold inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-[16px] h-[16px]" strokeWidth={2} />
                 <span>Ghi nhận xuất</span>
-              </Button>
+              </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Thanh công cụ tìm kiếm và lọc phân đoạn kiểu Linear */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-card/40 p-2 rounded-xl border border-border/50 shrink-0">
-        <div className="flex flex-wrap items-center gap-2 flex-1">
-          {/* Ô tìm kiếm nội bộ */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {/* Hàng 2: Thanh bộ lọc phân đoạn (xuống dòng được khi màn hẹp) */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 bg-surface p-2.5 rounded-[12px] border border-[var(--border)] shrink-0">
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          {/* Ô lọc nhanh rộng tối đa 340px */}
+          <div className="relative w-full sm:w-[260px] lg:w-[320px] max-w-[340px]">
+            <ListFilter
+              className="w-[15px] h-[15px] absolute left-3 top-1/2 -translate-y-1/2 text-subtle pointer-events-none"
+              strokeWidth={1.8}
+            />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Lọc mã bảng, khuôn, PO..."
-              className="w-full h-8 bg-card/60 border border-border/60 rounded-lg pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/80"
+              className="w-full h-9 bg-bg border border-[var(--border)] hover:border-[var(--border-strong)] rounded-[10px] pl-9 pr-3 text-[13px] text-text placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors"
             />
           </div>
 
-          {/* Lọc theo loại */}
-          <div className="flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-lg border border-border/50 text-xs">
+          {/* Thanh chọn loại: Tất cả / Bảng / Khuôn / PO */}
+          <div className="inline-flex items-center bg-track p-[3px] rounded-[10px] border border-[var(--border)]">
             {[
               { id: 'all', label: 'Tất cả' },
               { id: 'board', label: 'Bảng' },
@@ -414,11 +430,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             ].map((t) => (
               <button
                 key={t.id}
+                type="button"
                 onClick={() => setTypeFilter(t.id as ExportTypeFilter)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`h-8 px-3 rounded-[7px] text-[13px] transition-colors ${
                   typeFilter === t.id
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-selected text-selected-text font-medium shadow-xs'
+                    : 'bg-transparent text-muted-text hover:text-text font-normal'
                 }`}
               >
                 {t.label}
@@ -426,8 +443,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             ))}
           </div>
 
-          {/* Lọc theo ngày */}
-          <div className="flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-lg border border-border/50 text-xs">
+          {/* Thanh chọn thời gian: Mọi lúc / Hôm nay / 7 ngày qua / Tháng này */}
+          <div className="inline-flex items-center bg-track p-[3px] rounded-[10px] border border-[var(--border)]">
             {[
               { id: 'all', label: 'Mọi lúc' },
               { id: 'today', label: 'Hôm nay' },
@@ -436,55 +453,60 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             ].map((d) => (
               <button
                 key={d.id}
+                type="button"
                 onClick={() => setDateFilter(d.id as ExportDateFilter)}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`h-8 px-3 rounded-[7px] text-[13px] transition-colors ${
                   dateFilter === d.id
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-selected text-selected-text font-medium shadow-xs'
+                    : 'bg-transparent text-muted-text hover:text-text font-normal'
                 }`}
               >
                 {d.label}
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Chuyển đổi Dạng Cây Thư Mục / Dạng Bảng */}
-          <div className="flex items-center gap-0.5 bg-secondary/70 p-0.5 rounded-lg border border-border/60 text-xs shrink-0">
+        {/* Bên phải: Chuyển đổi Thư mục / Bảng + Số kết quả */}
+        <div className="flex items-center gap-3 ml-auto shrink-0">
+          <div className="inline-flex items-center bg-track p-[3px] rounded-[10px] border border-[var(--border)]">
             <button
+              type="button"
               onClick={() => handleViewModeChange('folder')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-[7px] text-[13px] transition-colors ${
                 viewMode === 'folder'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-selected text-selected-text font-medium shadow-xs'
+                  : 'bg-transparent text-muted-text hover:text-text font-normal'
               }`}
               title="Xem theo Cây thư mục (Năm > Tháng > Ngày > Thư mục con)"
             >
-              <Folder className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-medium">Thư Mục</span>
+              <Folder className="w-[15px] h-[15px]" strokeWidth={1.8} />
+              <span>Thư mục</span>
             </button>
             <button
+              type="button"
               onClick={() => handleViewModeChange('table')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-[7px] text-[13px] transition-colors ${
                 viewMode === 'table'
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-selected text-selected-text font-medium shadow-xs'
+                  : 'bg-transparent text-muted-text hover:text-text font-normal'
               }`}
               title="Xem theo Bảng phẳng tra cứu"
             >
-              <Table className="w-3.5 h-3.5" />
-              <span className="font-medium">Bảng</span>
+              <Table className="w-[15px] h-[15px]" strokeWidth={1.8} />
+              <span>Bảng</span>
             </button>
           </div>
-        </div>
 
-        <div className="text-[11px] text-muted-foreground font-mono px-2 shrink-0">
-          {viewMode === 'table'
-            ? `${filteredList.filter((i) => i.type !== 'image').length} kết quả`
-            : `${filteredList.length} kết quả`}
+          <div className="text-[12px] text-muted-text font-mono tabular-nums px-1 shrink-0">
+            {viewMode === 'table'
+              ? `${filteredList.filter((i) => i.type !== 'image').length} kết quả`
+              : `${filteredList.length} kết quả`}
+          </div>
         </div>
       </div>
 
-      {/* VÙNG HIỂN THỊ CHÍNH: DẠNG CÂY THƯ MỤC HOẶC BẢNG GOOGLE SHEETS */}
+      {/* VÙNG HIỂN THỊ CHÍNH: DẠNG CÂY THƯ MỤC HOẶC BẢNG */}
       <div className="flex-1 min-h-0 flex flex-col">
         {viewMode === 'folder' ? (
           <FolderExplorerView
@@ -499,7 +521,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             onPathChange={setCurrentExplorerPath}
           />
         ) : (
-          <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border/50 bg-card/20">
+          <div className="flex-1 min-h-0 overflow-y-auto rounded-[12px] border border-[var(--border)] bg-surface">
             <ExportTable
               items={filteredList.filter((i) => i.type !== 'image')}
               allExports={exportsList.filter((i) => i.type !== 'image')}

@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  LayoutDashboard,
   Search,
   FileSpreadsheet,
   Plus,
@@ -12,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { StorageWidget } from './storage-widget';
 import type { FeatureConfig } from '../../config/features';
 
@@ -38,21 +36,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { role, switchDemoRole, isConfigured } = useAuth();
 
   return (
-    <aside className="w-60 h-screen border-r border-border/50 bg-card/40 backdrop-blur-xl flex flex-col justify-between p-3 select-none shrink-0 transition-all">
-      {/* Cụm Header thương hiệu & Tạo nhanh */}
+    <aside className="w-60 h-screen border-r border-[var(--border)] bg-track/60 dark:bg-surface flex flex-col justify-between p-3 select-none shrink-0 transition-colors">
+      {/* Cụm Header thương hiệu & Menu điều hướng */}
       <div>
-        <div className="px-2 py-2.5 flex items-center justify-between mb-3">
+        <div className="px-2 py-2 flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <Box className="w-4 h-4 text-primary" />
+            <div className="w-8 h-8 rounded-[10px] bg-ai-bg border border-ai-border flex items-center justify-center text-ai-text shrink-0">
+              <Box className="w-4 h-4" strokeWidth={1.8} />
             </div>
-            <div>
-              <div className="text-sm font-bold text-foreground tracking-tight leading-tight flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="text-[14px] font-semibold text-text tracking-[-0.01em] leading-tight">
                 Nexus Prod
               </div>
-              <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                Cá nhân • Workspace
+              <div className="text-[11px] text-muted-text flex items-center gap-1.5 mt-0.5">
+                <span className="w-[6px] h-[6px] rounded-full bg-dot-mold inline-block shrink-0" />
+                <span className="truncate">Cá nhân • Workspace</span>
               </div>
             </div>
           </div>
@@ -60,151 +58,165 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Nút tạo thẻ việc mới (chỉ hiện khi module Danh sách việc được bật) */}
         {features.showKanban && (
-          <div className="mb-4">
+          <div className="mb-3">
             <Button
               onClick={onNewTaskClick}
-              className="w-full gap-2 font-medium h-9 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm text-xs"
+              className="w-full gap-2 font-semibold h-9 rounded-[10px] bg-primary hover:brightness-110 text-on-primary text-[13px]"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" strokeWidth={1.8} />
               <span>Thẻ việc mới</span>
-              <kbd className="ml-auto text-[10px] font-mono opacity-60">N</kbd>
+              <kbd className="ml-auto text-[10px] font-mono opacity-75">N</kbd>
             </Button>
           </div>
         )}
 
-        {/* Menu điều hướng chính phong cách Linear */}
+        {/* Menu điều hướng chính */}
         <nav className="space-y-1">
           {features.showKanban && (
             <button
               onClick={() => onTabChange('kanban')}
-              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+              className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
                 activeTab === 'kanban'
-                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  ? 'bg-selected text-selected-text font-medium border border-[var(--border)] shadow-xs'
+                  : 'text-muted-text hover:text-text hover:bg-row-hover font-normal'
               }`}
             >
-              <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-              <span className="flex-1">Danh sách việc</span>
+              <CheckCircle2
+                className={`w-[16px] h-[16px] shrink-0 ${
+                  activeTab === 'kanban' ? 'text-dot-board' : 'text-subtle'
+                }`}
+                strokeWidth={1.8}
+              />
+              <span className="flex-1 truncate">Danh sách việc</span>
             </button>
           )}
 
           {features.showCompleted && (
             <button
               onClick={() => onTabChange('completed')}
-              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+              className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
                 activeTab === 'completed'
-                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  ? 'bg-selected text-selected-text font-medium border border-[var(--border)] shadow-xs'
+                  : 'text-muted-text hover:text-text hover:bg-row-hover font-normal'
               }`}
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span className="flex-1">Task hoàn thành</span>
+              <CheckCircle2
+                className={`w-[16px] h-[16px] shrink-0 ${
+                  activeTab === 'completed' ? 'text-dot-mold' : 'text-subtle'
+                }`}
+                strokeWidth={1.8}
+              />
+              <span className="flex-1 truncate">Task hoàn thành</span>
             </button>
           )}
 
           <button
             onClick={() => onTabChange('search')}
-            className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+            className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
               activeTab === 'search'
-                ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                ? 'bg-selected text-selected-text font-medium border border-[var(--border)] shadow-xs'
+                : 'text-muted-text hover:text-text hover:bg-row-hover font-normal'
             }`}
           >
-            <Search className="w-4 h-4 text-cyan-400" />
-            <span className="flex-1">Tra cứu xuất khuôn bảng</span>
+            <Search
+              className={`w-[16px] h-[16px] shrink-0 ${
+                activeTab === 'search' ? 'text-dot-board' : 'text-subtle'
+              }`}
+              strokeWidth={1.8}
+            />
+            <span className="flex-1 leading-snug">Tra cứu xuất khuôn bảng</span>
           </button>
 
           {features.showBulkScanner && (
             <button
               onClick={() => onTabChange('bulk')}
-              className={`w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium ${
+              className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
                 activeTab === 'bulk'
-                  ? 'bg-accent text-foreground font-semibold shadow-xs border border-border/60'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  ? 'bg-selected text-selected-text font-medium border border-[var(--border)] shadow-xs'
+                  : 'text-muted-text hover:text-text hover:bg-row-hover font-normal'
               }`}
             >
-              <FileSpreadsheet className="w-4 h-4 text-amber-400" />
-              <span className="flex-1">Thêm hàng loạt</span>
+              <FileSpreadsheet
+                className={`w-[16px] h-[16px] shrink-0 ${
+                  activeTab === 'bulk' ? 'text-dot-po' : 'text-subtle'
+                }`}
+                strokeWidth={1.8}
+              />
+              <span className="flex-1 truncate">Thêm hàng loạt</span>
             </button>
           )}
 
-          {/* Nút Cài đặt hiển thị Module trên Sidebar */}
-          <div className="pt-2 mt-2 border-t border-border/40">
+          {/* Nút Cài đặt hiển thị Module */}
+          <div className="pt-2.5 mt-2.5 border-t border-[var(--border)]">
             <button
               onClick={onOpenSettings}
-              className="w-full text-left rounded-lg px-2.5 py-2 flex items-center gap-2.5 transition-all text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 group"
+              className="w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] font-normal text-muted-text hover:text-text hover:bg-row-hover group"
             >
-              <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              <span className="flex-1">Cài đặt hiển thị</span>
+              <Settings
+                className="w-[16px] h-[16px] text-subtle group-hover:text-text transition-colors shrink-0"
+                strokeWidth={1.8}
+              />
+              <span className="flex-1 truncate">Cài đặt hiển thị</span>
             </button>
           </div>
         </nav>
       </div>
 
       {/* Footer Sidebar: Dung lượng + Chuyển role test + Thông tin cá nhân */}
-      <div className="pt-2 border-t border-border/40 space-y-2">
-        {/* Widget dung lượng */}
+      <div className="pt-3 space-y-2.5">
         <StorageWidget />
 
-        {/* Nút chuyển đổi Admin / Viewer để designer test phân quyền */}
-        <div className="bg-secondary/50 p-1.5 rounded-lg border border-border/40">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1 px-1 font-mono">
+        {/* Nút chuyển đổi Admin / Viewer */}
+        <div className="bg-surface p-2.5 rounded-[12px] border border-[var(--border)]">
+          <div className="flex items-center justify-between text-[11px] text-muted-text mb-2 px-0.5">
             <span>Vai trò đang test:</span>
-            {!isConfigured && <span className="text-amber-400">(Demo)</span>}
+            {!isConfigured && <span className="text-dot-po font-mono">(Demo)</span>}
           </div>
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => switchDemoRole('admin')}
-              className={`flex items-center justify-center gap-1 py-1 px-2 rounded text-[11px] font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 h-8 px-2 rounded-[8px] text-[12px] font-medium transition-colors ${
                 role === 'admin'
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-track text-muted-text hover:text-text'
               }`}
             >
-              <ShieldCheck className="w-3 h-3" />
+              <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.8} />
               Admin
             </button>
             <button
               onClick={() => switchDemoRole('viewer')}
-              className={`flex items-center justify-center gap-1 py-1 px-2 rounded text-[11px] font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 h-8 px-2 rounded-[8px] text-[12px] font-medium transition-colors ${
                 role === 'viewer'
-                  ? 'bg-foreground text-background shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-selected text-selected-text border border-[var(--border-strong)]'
+                  : 'bg-track text-muted-text hover:text-text'
               }`}
             >
-              <Eye className="w-3 h-3" />
+              <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
               Viewer
             </button>
           </div>
         </div>
 
         {/* Thẻ người dùng cá nhân */}
-        <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-card/60 border border-border/40 text-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-md bg-primary/20 border border-primary/30 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 font-mono">
+        <div className="flex items-center justify-between px-2.5 py-2 rounded-[12px] bg-surface border border-[var(--border)]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-tag-board-bg text-tag-board-text flex items-center justify-center font-semibold text-[11px] shrink-0 font-mono">
               DS
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium text-foreground truncate">
+              <div className="text-[13px] font-medium text-text truncate">
                 Designer
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={onOpenSettings}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
-              title="Cài đặt hiển thị Module"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
-            <Badge
-              variant={role === 'admin' ? 'indigo' : 'outline'}
-              className="text-[9px] px-1.5 py-0 uppercase font-mono tracking-wider h-4"
-            >
-              {role}
-            </Badge>
-          </div>
+          <button
+            onClick={onOpenSettings}
+            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-row-hover transition-colors"
+            title="Cài đặt hiển thị Module"
+          >
+            <Settings className="w-[15px] h-[15px]" strokeWidth={1.8} />
+          </button>
         </div>
       </div>
     </aside>

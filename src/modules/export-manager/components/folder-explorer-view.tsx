@@ -787,46 +787,47 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   return (
     <div
       onContextMenu={handleContainerContextMenu}
-      className="flex flex-col h-full space-y-2.5 relative select-none"
+      className="flex flex-col h-full space-y-5 relative select-none"
     >
-      {/* THANH BREADCRUMB PHONG CÁCH WINDOWS EXPLORER / NETWORK DRIVE */}
-      <div className="flex items-center justify-between gap-2 bg-card/60 p-2 rounded-xl border border-border/60 shrink-0 text-xs shadow-xs">
+      {/* THANH THƯ MỤC (nền --surface, bo 12px, viền --border) theo DESIGN.md mục 5 */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-surface px-3 py-2 rounded-[12px] border border-[var(--border)] shrink-0">
         {/* Nhóm nút Back và Breadcrumb */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto py-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto">
+          <button
+            type="button"
             onClick={handleNavigateUp}
             disabled={currentPath.length === 0}
-            className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground shrink-0 disabled:opacity-30"
+            className="h-[34px] w-[34px] rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-row-hover shrink-0 disabled:opacity-30 transition-colors"
             title="Quay lại thư mục trước (Back)"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </Button>
+            <ArrowLeft className="w-[16px] h-[16px]" strokeWidth={1.8} />
+          </button>
 
-          {/* Đường dẫn Cây thư mục */}
-          <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground select-none flex-nowrap">
+          {/* Đường dẫn Cây thư mục: Gốc / 2026 / 2026-11 / 11-02 */}
+          <div className="flex items-center gap-1.5 text-[13px] text-muted-text select-none flex-nowrap">
             <button
+              type="button"
               onClick={() => handleNavigateToBreadcrumb(-1)}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[6px] transition-colors ${
                 currentPath.length === 0
-                  ? 'text-foreground font-semibold bg-accent/60'
-                  : 'hover:text-foreground hover:bg-secondary'
+                  ? 'bg-selected text-selected-text font-medium'
+                  : 'hover:text-text hover:bg-row-hover'
               }`}
             >
-              <HardDrive className="w-3.5 h-3.5 text-primary" />
+              <Folder className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
               <span>Gốc</span>
             </button>
 
             {currentPath.map((segment, idx) => (
               <React.Fragment key={idx}>
-                <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                <span className="text-faint select-none">/</span>
                 <button
+                  type="button"
                   onClick={() => handleNavigateToBreadcrumb(idx)}
-                  className={`px-1.5 py-0.5 rounded transition-colors truncate max-w-[120px] ${
+                  className={`font-mono px-2.5 py-1 rounded-[6px] transition-colors truncate max-w-[140px] ${
                     idx === currentPath.length - 1
-                      ? 'text-foreground font-semibold bg-accent/60'
-                      : 'hover:text-foreground hover:bg-secondary'
+                      ? 'bg-selected text-selected-text font-semibold'
+                      : 'hover:text-text hover:bg-row-hover'
                   }`}
                 >
                   {segment}
@@ -836,37 +837,35 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
           </div>
         </div>
 
-        {/* Nút thao tác nhanh bên phải: Tạo thư mục, Tải ảnh, Thêm file */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Nút thao tác bên phải (nút nhỏ cao 34px, bo 10px; chỉ 1 nút màu đặc --primary) */}
+        <div className="flex items-center gap-2 shrink-0">
           {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setIsNewFolderOpen(true)}
-              className="h-7 text-xs gap-1 border-border/60 rounded-lg bg-card text-muted-foreground hover:text-foreground"
+              className="h-[34px] px-3 rounded-[10px] bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-row-hover text-[13px] font-medium text-text inline-flex items-center gap-1.5 transition-colors"
               title="Tạo thư mục mới (hoặc nhấp chuột phải)"
             >
-              <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
+              <FolderPlus className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
               <span className="hidden sm:inline">Thư mục mới</span>
-            </Button>
+            </button>
           )}
 
           {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setIsImageUploadOpen(true)}
-              className="h-7 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 flex items-center gap-1.5 transition-colors"
+              className="h-[34px] px-3 rounded-[10px] bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-row-hover text-[13px] font-medium text-text inline-flex items-center gap-1.5 transition-colors"
               title="Tải ảnh lên thư mục này (nén WebP nét căng)"
             >
-              <FileImage className="w-3.5 h-3.5" />
+              <FileImage className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
               <span>Thêm ảnh</span>
-            </Button>
+            </button>
           )}
 
           {isAdmin && onNewExportInFolder && (
-            <Button
-              size="sm"
+            <button
+              type="button"
               onClick={() => {
                 const date =
                   currentMonth && currentDay
@@ -874,11 +873,11 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                     : undefined;
                 onNewExportInFolder(currentSubfolder, date);
               }}
-              className="h-7 text-xs gap-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-2.5"
+              className="h-[34px] px-3.5 rounded-[10px] bg-primary hover:brightness-110 text-on-primary text-[13px] font-semibold inline-flex items-center gap-1.5 transition-all"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-[15px] h-[15px]" strokeWidth={2} />
               <span>Thêm file vào đây</span>
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -889,7 +888,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
         onMouseDown={handleContainerMouseDown}
         onMouseMove={handleContainerMouseMove}
         onContextMenu={handleContainerContextMenu}
-        className="flex-1 min-h-0 overflow-y-auto p-3 rounded-xl border border-border/50 bg-card/20 space-y-4 relative"
+        className="flex-1 min-h-0 overflow-y-auto p-4 rounded-[12px] border border-[var(--border)] bg-surface space-y-5 relative"
       >
         {/* CẤP 0: DANH SÁCH CÁC NĂM (GỐC) */}
         {level === 0 && (
@@ -905,13 +904,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsNewFolderOpen(true)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 transition-all duration-200 cursor-pointer select-none group"
+                  className="flex items-center gap-3 p-3 rounded-[12px] border border-dashed border-[var(--border-strong)] hover:border-dot-po bg-row hover:bg-row-hover text-tag-po-text transition-colors cursor-pointer select-none group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
-                    <FolderPlus className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-[10px] bg-tag-po-bg flex items-center justify-center text-tag-po-text shrink-0">
+                    <FolderPlus className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
+                    <div className="text-[13px] font-semibold text-text">
                       + Tạo năm mới
                     </div>
                     <div className="text-[10px] text-muted-foreground font-mono">
@@ -953,13 +952,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsNewFolderOpen(true)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 transition-all duration-200 cursor-pointer select-none group"
+                  className="flex items-center gap-3 p-3 rounded-[12px] border border-dashed border-[var(--border-strong)] hover:border-dot-po bg-row hover:bg-row-hover text-tag-po-text transition-colors cursor-pointer select-none group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
-                    <FolderPlus className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-[10px] bg-tag-po-bg flex items-center justify-center text-tag-po-text shrink-0">
+                    <FolderPlus className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
+                    <div className="text-[13px] font-semibold text-text">
                       + Tạo tháng mới
                     </div>
                     <div className="text-[10px] text-muted-foreground font-mono">
@@ -1001,13 +1000,13 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsNewFolderOpen(true)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-amber-500/40 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 transition-all duration-200 cursor-pointer select-none group"
+                  className="flex items-center gap-3 p-3 rounded-[12px] border border-dashed border-[var(--border-strong)] hover:border-dot-po bg-row hover:bg-row-hover text-tag-po-text transition-colors cursor-pointer select-none group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shrink-0">
-                    <FolderPlus className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-[10px] bg-tag-po-bg flex items-center justify-center text-tag-po-text shrink-0">
+                    <FolderPlus className="w-[18px] h-[18px]" strokeWidth={1.8} />
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-semibold text-foreground group-hover:text-amber-400 transition-colors">
+                    <div className="text-[13px] font-semibold text-text">
                       + Tạo ngày mới
                     </div>
                     <div className="text-[10px] text-muted-foreground font-mono">
@@ -1085,12 +1084,12 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             {/* 2. Nhóm hình ảnh đính kèm trong ngày */}
             {dayImages.length > 0 && (
               <div className="space-y-2 pt-1">
-                <div className="text-[11px] font-mono text-emerald-400 font-semibold uppercase tracking-wider flex items-center justify-between">
+                <div className="text-[11px] font-mono text-dot-mold font-semibold uppercase tracking-wider flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <FileImage className="w-3.5 h-3.5" />
-                    <span>Hình Ảnh Đính Kèm (Ngày {currentDay}) • 图片附件</span>
+                    <FileImage className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    <span>Hình Ảnh Đính Kèm · Ngày {currentDay} • 图片附件</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground/80 font-normal">
+                  <span className="text-[11px] text-subtle font-normal normal-case">
                     {dayImages.length} hình ảnh
                   </span>
                 </div>
@@ -1117,10 +1116,10 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
             {/* 3. Nhóm file xuất PDF trực tiếp nằm ở thư mục ngày */}
             <div className="space-y-2 pt-1">
-              <div className="text-[11px] font-mono text-muted-foreground font-medium uppercase tracking-wider flex items-center justify-between">
+              <div className="text-[11px] font-mono text-muted-text font-medium uppercase tracking-wider flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-rose-400" />
-                  <span>File Xuất PDF (Ngày {currentDay}) • PDF 文件</span>
+                  <FileText className="w-3.5 h-3.5 text-pdf-text" strokeWidth={1.8} />
+                  <span>File Xuất PDF · Ngày {currentDay} • PDF 文件</span>
                 </div>
 
                 <div className="flex items-center gap-3">

@@ -179,7 +179,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             </button>
           )}
 
-          {isAdmin && onEdit && (
+          {onEdit && (
             <button
               type="button"
               onClick={(e) => {
@@ -193,7 +193,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             </button>
           )}
 
-          {isAdmin && onDelete && (
+          {onDelete && (
             <button
               type="button"
               onClick={(e) => {
@@ -366,7 +366,6 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
             <Eye className="w-[15px] h-[15px]" strokeWidth={1.8} />
           </button>
         ) : (
-          isAdmin &&
           onAttachImage && (
             <button
               type="button"
@@ -395,7 +394,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
           )}
         </button>
 
-        {isAdmin && onEdit && (
+        {onEdit && (
           <button
             type="button"
             onClick={(e) => {
@@ -409,7 +408,7 @@ export const FileItemCard: React.FC<FileItemCardProps> = ({
           </button>
         )}
 
-        {isAdmin && onDelete && (
+        {onDelete && (
           <button
             type="button"
             onClick={(e) => {

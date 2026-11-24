@@ -4,6 +4,8 @@ import { Header } from './components/layout/header';
 import { KanbanBoard } from './modules/kanban';
 import { CompletedTasksScreen } from './modules/completed-tasks';
 import { ExportManager } from './modules/export-manager';
+import { AccountManager } from './modules/account-manager';
+import { LoginScreen } from './modules/auth';
 import { Card } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { Sparkles } from 'lucide-react';
@@ -22,18 +24,34 @@ export default function App() {
   const [newTaskTrigger, setNewTaskTrigger] = useState<number>(0);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const { isAdmin } = useAuth();
+  const { account, isAdmin, permissions, isLoading } = useAuth();
 
-  // Tự động chuyển về tab Tra cứu nếu tab hiện tại bị tắt trong cài đặt
+  // Tự động chuyển về tab Tra cứu nếu tab hiện tại bị tắt hoặc không có quyền
   useEffect(() => {
     if (activeTab === 'kanban' && !features.showKanban) {
       setActiveTab('search');
     } else if (activeTab === 'completed' && !features.showCompleted) {
       setActiveTab('search');
-    } else if (activeTab === 'bulk' && !features.showBulkScanner) {
+    } else if (activeTab === 'bulk' && (!features.showBulkScanner || !permissions.can_ai_scan)) {
+      setActiveTab('search');
+    } else if (activeTab === 'accounts' && !isAdmin) {
       setActiveTab('search');
     }
-  }, [activeTab, features]);
+  }, [activeTab, features, isAdmin, permissions.can_ai_scan]);
+
+  // Trạng thái đang kiểm tra phiên đăng nhập
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full bg-bg text-muted-text flex items-center justify-center text-[13px]">
+        Đang tải hệ thống...
+      </div>
+    );
+  }
+
+  // Chưa đăng nhập → hiển thị màn hình Đăng nhập
+  if (!account) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-bg overflow-hidden text-text">
@@ -104,33 +122,35 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'bulk' && features.showBulkScanner && (
+            {activeTab === 'accounts' && isAdmin && <AccountManager />}
+
+            {activeTab === 'bulk' && features.showBulkScanner && permissions.can_ai_scan && (
               <div className="flex-1 flex items-center justify-center p-4">
-                <Card className="border border-border/80 bg-card/40 p-8 max-w-lg w-full text-center rounded-2xl shadow-xl backdrop-blur-sm space-y-5">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-500/30 text-indigo-400 mx-auto flex items-center justify-center">
+                <Card className="border border-[var(--border)] bg-surface p-8 max-w-lg w-full text-center rounded-[14px] space-y-5">
+                  <div className="w-14 h-14 rounded-2xl bg-ai-bg border border-ai-border text-ai-text mx-auto flex items-center justify-center">
                     <Sparkles className="w-7 h-7" />
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-lg font-bold text-foreground">
+                    <h3 className="text-lg font-bold text-text">
                       AI Tự Động Quét Ảnh & Đối Chiếu Xuất Xưởng
                     </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Chụp màn hình danh sách tên file (thư mục, Excel, Zalo), AI sẽ tự động phân tích mã Bảng, Khuôn, PO, đối chiếu với Kanban và lịch sử xuất để tự động chuyển sang Xuất khuôn bảng.
+                    <p className="text-xs text-muted-text leading-relaxed">
+                      Chụp màn hình danh sách tên file (thư mục, Excel, Zalo), AI sẽ tự động phân tích mã Bảng, Khuôn, PO và đối chiếu với lịch sử xuất để tự động chuyển sang Xuất khuôn bảng.
                     </p>
                   </div>
 
                   <div className="pt-2">
                     <Button
                       onClick={() => setIsAiScannerOpen(true)}
-                      className="h-10 px-5 gap-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 hover:from-indigo-600 hover:via-purple-700 hover:to-pink-600 text-white shadow-md hover:shadow-indigo-500/20 transition-all"
+                      className="h-10 px-5 gap-2 text-xs font-semibold rounded-[10px] bg-primary hover:brightness-110 text-on-primary transition-all"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>Mở Trình Quét AI (Ctrl + V)</span>
                     </Button>
                   </div>
 
-                  <div className="border-t border-border/40 pt-4 text-[11px] text-muted-foreground flex items-center justify-center gap-2 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="border-t border-[var(--border)] pt-4 text-[11px] text-muted-text flex items-center justify-center gap-2 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-dot-mold animate-pulse" />
                     <span>Hỗ trợ dán ảnh phím tắt Ctrl + V trực tiếp</span>
                   </div>
                 </Card>
@@ -138,7 +158,7 @@ export default function App() {
                 <AiScannerModal
                   isOpen={isAiScannerOpen}
                   onOpenChange={setIsAiScannerOpen}
-                  isAdmin={isAdmin}
+                  isAdmin={permissions.can_ai_scan}
                   onSuccess={() => setActiveTab('search')}
                 />
               </div>

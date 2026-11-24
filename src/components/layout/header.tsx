@@ -17,6 +17,7 @@ const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string }> = {
   completed: { title: 'Đã hoàn thành', subtitle: 'Lịch sử & kho lưu trữ' },
   search: { title: 'Tra cứu xuất khuôn bảng', subtitle: 'Danh mục Bảng, Khuôn & PO' },
   bulk: { title: 'Thêm hàng loạt', subtitle: 'Bóc tách mã file tự động' },
+  accounts: { title: 'Quản lý tài khoản', subtitle: '' },
 };
 
 export const Header: React.FC<HeaderProps> = ({

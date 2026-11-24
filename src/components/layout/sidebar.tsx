@@ -3,18 +3,19 @@ import {
   Search,
   FileSpreadsheet,
   Plus,
-  ShieldCheck,
-  Eye,
   CheckCircle2,
   Box,
   Settings,
+  Users,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/button';
 import { StorageWidget } from './storage-widget';
 import type { FeatureConfig } from '../../config/features';
+import { getAccountInitials } from '../../modules/auth/types';
 
-export type ActiveTab = 'kanban' | 'completed' | 'search' | 'bulk';
+export type ActiveTab = 'kanban' | 'completed' | 'search' | 'bulk' | 'accounts';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -33,7 +34,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   features,
 }) => {
-  const { role, switchDemoRole, isConfigured } = useAuth();
+  const { account, isAdmin, permissions, signOut } = useAuth();
+
+  const displayName = account?.display_name || 'Admin';
+  const username = account?.username || 'admin';
+  const initials = getAccountInitials(displayName, username);
 
   return (
     <aside className="w-60 h-screen border-r border-[var(--border)] bg-track/60 dark:bg-surface flex flex-col justify-between p-3 select-none shrink-0 transition-colors">
@@ -57,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Nút tạo thẻ việc mới (chỉ hiện khi module Danh sách việc được bật) */}
-        {features.showKanban && (
+        {features.showKanban && isAdmin && (
           <div className="mb-3">
             <Button
               onClick={onNewTaskClick}
@@ -127,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="flex-1 leading-snug">Tra cứu xuất khuôn bảng</span>
           </button>
 
-          {features.showBulkScanner && (
+          {features.showBulkScanner && permissions.can_ai_scan && (
             <button
               onClick={() => onTabChange('bulk')}
               className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
@@ -146,8 +151,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
 
-          {/* Nút Cài đặt hiển thị Module */}
-          <div className="pt-2.5 mt-2.5 border-t border-[var(--border)]">
+          {/* Nhóm QUẢN TRỊ theo đúng hình Quản lý tài khoản (Dark & Light) */}
+          <div className="pt-4 mt-2 space-y-1">
+            <div className="px-2.5 pb-1 text-[10.5px] font-mono font-medium uppercase tracking-wider text-subtle">
+              Quản trị
+            </div>
+
+            {isAdmin && (
+              <button
+                onClick={() => onTabChange('accounts')}
+                className={`w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] ${
+                  activeTab === 'accounts'
+                    ? 'bg-selected text-selected-text font-medium border border-[var(--border)] shadow-xs'
+                    : 'text-muted-text hover:text-text hover:bg-row-hover font-normal'
+                }`}
+              >
+                <Users
+                  className={`w-[16px] h-[16px] shrink-0 ${
+                    activeTab === 'accounts' ? 'text-dot-board' : 'text-subtle'
+                  }`}
+                  strokeWidth={1.8}
+                />
+                <span className="flex-1 truncate">Quản lý tài khoản</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenSettings}
               className="w-full text-left rounded-[10px] px-2.5 py-2 flex items-center gap-2.5 transition-colors text-[13px] font-normal text-muted-text hover:text-text hover:bg-row-hover group"
@@ -162,60 +190,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Sidebar: Dung lượng + Chuyển role test + Thông tin cá nhân */}
+      {/* Footer Sidebar: Bộ nhớ Supabase + Thẻ người dùng & Đăng xuất */}
       <div className="pt-3 space-y-2.5">
         <StorageWidget />
 
-        {/* Nút chuyển đổi Admin / Viewer */}
-        <div className="bg-surface p-2.5 rounded-[12px] border border-[var(--border)]">
-          <div className="flex items-center justify-between text-[11px] text-muted-text mb-2 px-0.5">
-            <span>Vai trò đang test:</span>
-            {!isConfigured && <span className="text-dot-po font-mono">(Demo)</span>}
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => switchDemoRole('admin')}
-              className={`flex items-center justify-center gap-1.5 h-8 px-2 rounded-[8px] text-[12px] font-medium transition-colors ${
-                role === 'admin'
-                  ? 'bg-primary text-on-primary'
-                  : 'bg-track text-muted-text hover:text-text'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" strokeWidth={1.8} />
-              Admin
-            </button>
-            <button
-              onClick={() => switchDemoRole('viewer')}
-              className={`flex items-center justify-center gap-1.5 h-8 px-2 rounded-[8px] text-[12px] font-medium transition-colors ${
-                role === 'viewer'
-                  ? 'bg-selected text-selected-text border border-[var(--border-strong)]'
-                  : 'bg-track text-muted-text hover:text-text'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5" strokeWidth={1.8} />
-              Viewer
-            </button>
-          </div>
-        </div>
-
-        {/* Thẻ người dùng cá nhân */}
-        <div className="flex items-center justify-between px-2.5 py-2 rounded-[12px] bg-surface border border-[var(--border)]">
+        <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-[12px] bg-surface border border-[var(--border)]">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-full bg-tag-board-bg text-tag-board-text flex items-center justify-center font-semibold text-[11px] shrink-0 font-mono">
-              DS
+              {initials}
             </div>
             <div className="min-w-0">
-              <div className="text-[13px] font-medium text-text truncate">
-                Designer
+              <div className="text-[13px] font-medium text-text truncate leading-tight">
+                {displayName}
+              </div>
+              <div className="text-[11px] text-muted-text leading-tight mt-0.5">
+                {isAdmin ? 'Admin' : 'Nhân viên'}
               </div>
             </div>
           </div>
+
           <button
-            onClick={onOpenSettings}
-            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-text hover:bg-row-hover transition-colors"
-            title="Cài đặt hiển thị Module"
+            type="button"
+            onClick={() => signOut()}
+            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-subtle hover:text-pdf-text hover:bg-pdf-bg transition-colors shrink-0"
+            title="Đăng xuất"
           >
-            <Settings className="w-[15px] h-[15px]" strokeWidth={1.8} />
+            <LogOut className="w-[15px] h-[15px]" strokeWidth={1.8} />
           </button>
         </div>
       </div>

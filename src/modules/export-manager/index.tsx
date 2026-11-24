@@ -36,7 +36,13 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
     updateExport,
     deleteExport,
   } = useExports();
-  const { isAdmin } = useAuth();
+  const { isAdmin, permissions } = useAuth();
+  const canCreate = permissions.can_create_export;
+  const canUpload = permissions.can_upload_files;
+  const canAiScan = permissions.can_ai_scan;
+  const canEdit = permissions.can_edit;
+  const canDelete = permissions.can_delete;
+  const canExportCsv = permissions.can_export_csv;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<ExportTypeFilter>('all');
@@ -151,27 +157,27 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
   });
 
   const handleOpenAdd = () => {
-    if (!isAdmin) return;
+    if (!canCreate) return;
     setSelectedItem(null);
     setDefaultFolderData({});
     setIsDialogOpen(true);
   };
 
   const handleNewExportInFolder = (subfolder?: string, date?: string) => {
-    if (!isAdmin) return;
+    if (!canCreate && !canUpload) return;
     setSelectedItem(null);
     setDefaultFolderData({ subfolder, date });
     setIsDialogOpen(true);
   };
 
   const handleEdit = (item: ExportItem) => {
-    if (!isAdmin) return;
+    if (!canEdit && !canUpload) return;
     setSelectedItem(item);
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!isAdmin) return;
+    if (!canDelete) return;
     if (confirm('Bạn có chắc chắn muốn xóa bản ghi xuất này không?')) {
       await deleteExport(id);
     }
@@ -353,15 +359,17 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
 
         {/* Cụm nút hành động bên phải (nút lớn cao 40px, bo 10px) */}
         <div className="flex items-center gap-2 ml-auto flex-wrap">
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="h-10 px-3.5 rounded-[10px] bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-row-hover text-[13px] font-medium text-text inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors"
-            title="Tải về file CSV để mở bằng Excel hoặc Google Sheets"
-          >
-            <Download className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
-            <span className="hidden sm:inline">Xuất CSV</span>
-          </button>
+          {canExportCsv && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="h-10 px-3.5 rounded-[10px] bg-surface border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-row-hover text-[13px] font-medium text-text inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-colors"
+              title="Tải về file CSV để mở bằng Excel hoặc Google Sheets"
+            >
+              <Download className="w-[15px] h-[15px] text-subtle" strokeWidth={1.8} />
+              <span className="hidden sm:inline">Xuất CSV</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -376,28 +384,28 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             />
           </button>
 
-          {isAdmin && (
-            <>
-              <button
-                type="button"
-                onClick={() => setIsAiScannerOpen(true)}
-                className="h-10 px-3.5 rounded-[10px] bg-ai-bg border border-ai-border text-ai-text hover:brightness-105 text-[13px] font-medium inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
-                title="Chụp màn hình và dán Ctrl+V để AI tự động nhận diện và đối chiếu"
-              >
-                <Sparkles className="w-[15px] h-[15px]" strokeWidth={1.8} />
-                <span>AI Quét ảnh</span>
-                <span className="font-mono text-[11px] opacity-80 hidden sm:inline">Ctrl+V</span>
-              </button>
+          {canAiScan && (
+            <button
+              type="button"
+              onClick={() => setIsAiScannerOpen(true)}
+              className="h-10 px-3.5 rounded-[10px] bg-ai-bg border border-ai-border text-ai-text hover:brightness-105 text-[13px] font-medium inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
+              title="Chụp màn hình và dán Ctrl+V để AI tự động nhận diện và đối chiếu"
+            >
+              <Sparkles className="w-[15px] h-[15px]" strokeWidth={1.8} />
+              <span>AI Quét ảnh</span>
+              <span className="font-mono text-[11px] opacity-80 hidden sm:inline">Ctrl+V</span>
+            </button>
+          )}
 
-              <button
-                type="button"
-                onClick={handleOpenAdd}
-                className="h-10 px-4 rounded-[10px] bg-primary hover:brightness-110 text-on-primary text-[13px] font-semibold inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
-              >
-                <Plus className="w-[16px] h-[16px]" strokeWidth={2} />
-                <span>Ghi nhận xuất</span>
-              </button>
-            </>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="h-10 px-4 rounded-[10px] bg-primary hover:brightness-110 text-on-primary text-[13px] font-semibold inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg transition-all"
+            >
+              <Plus className="w-[16px] h-[16px]" strokeWidth={2} />
+              <span>Ghi nhận xuất</span>
+            </button>
           )}
         </div>
       </div>
@@ -512,9 +520,10 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
           <FolderExplorerView
             items={filteredList}
             isAdmin={isAdmin}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onNewExportInFolder={handleNewExportInFolder}
+            permissions={permissions}
+            onEdit={canEdit ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            onNewExportInFolder={canCreate || canUpload ? handleNewExportInFolder : undefined}
             targetPath={folderNavigation?.path}
             highlightItemId={folderNavigation?.highlightItemId}
             revealTrigger={folderNavigation?.trigger}
@@ -525,9 +534,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
             <ExportTable
               items={filteredList.filter((i) => i.type !== 'image')}
               allExports={exportsList.filter((i) => i.type !== 'image')}
-              isAdmin={isAdmin}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              isAdmin={canEdit || canDelete}
+              onEdit={canEdit ? handleEdit : undefined}
+              onDelete={canDelete ? handleDelete : undefined}
               onRevealInFolder={handleRevealInFolder}
             />
           </div>
@@ -542,14 +551,14 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ externalSearch = '
         defaultSubfolder={defaultFolderData.subfolder}
         defaultDate={defaultFolderData.date}
         onSave={handleSave}
-        isAdmin={isAdmin}
+        isAdmin={canCreate || canEdit || canUpload}
       />
 
       {/* Hộp thoại AI Đọc ảnh & Đối chiếu xuất xưởng */}
       <AiScannerModal
         isOpen={isAiScannerOpen}
         onOpenChange={setIsAiScannerOpen}
-        isAdmin={isAdmin}
+        isAdmin={canAiScan}
         onSuccess={refetch}
         defaultDate={
           currentExplorerPath[1] && currentExplorerPath[2]

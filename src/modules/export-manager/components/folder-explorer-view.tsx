@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { ExportItem } from '../types';
+import type { AccountPermissions } from '../../auth/types';
 import { FolderItemCard } from './folder-item-card';
 import { FileItemCard } from './file-item-card';
 import { ImageUploadModal } from './image-upload-modal';
@@ -34,6 +35,7 @@ import {
 interface FolderExplorerViewProps {
   items: ExportItem[];
   isAdmin: boolean;
+  permissions?: AccountPermissions;
   onEdit?: (item: ExportItem) => void;
   onDelete?: (id: string) => void;
   onNewExportInFolder?: (subfolder?: string, date?: string) => void;
@@ -46,6 +48,7 @@ interface FolderExplorerViewProps {
 export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   items,
   isAdmin,
+  permissions,
   onEdit,
   onDelete,
   onNewExportInFolder,
@@ -54,6 +57,10 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   revealTrigger,
   onPathChange,
 }) => {
+  const canUpload = permissions ? permissions.can_upload_files : isAdmin;
+  const canCreate = permissions ? permissions.can_create_export : isAdmin;
+  const canEdit = permissions ? permissions.can_edit : isAdmin;
+  const canDelete = permissions ? permissions.can_delete : isAdmin;
   const { batchUpdateExports, batchDeleteExports, deleteFolderExports, refetch } = useExports();
 
   // Đường dẫn hiện tại: [] = Root, ['2026'], ['2026', '2026-10'], ['2026', '2026-10', '10-15'], ['2026', '2026-10', '10-15', 'bestway']
@@ -645,7 +652,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
   // Xóa hàng loạt file đã chọn
   const handleBatchDelete = async () => {
-    if (!isAdmin || selectedFileIds.length === 0) return;
+    if (!canDelete || selectedFileIds.length === 0) return;
     if (window.confirm(`Anh có chắc chắn muốn xóa vĩnh viễn ${selectedFileIds.length} file đã chọn khỏi database không?`)) {
       await batchDeleteExports(selectedFileIds);
       await refetch();
@@ -657,7 +664,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
   // XÓA THƯ MỤC TRIỆT ĐỂ KHỎI DATABASE
   // ==========================================
   const handleConfirmDeleteFolder = async () => {
-    if (!folderToDelete || !isAdmin) return;
+    if (!folderToDelete || !canDelete) return;
     setIsDeletingFolder(true);
     try {
       const { name, type } = folderToDelete;
@@ -839,7 +846,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
         {/* Nút thao tác bên phải (nút nhỏ cao 34px, bo 10px; chỉ 1 nút màu đặc --primary) */}
         <div className="flex items-center gap-2 shrink-0">
-          {isAdmin && (
+          {canUpload && (
             <button
               type="button"
               onClick={() => setIsNewFolderOpen(true)}
@@ -851,7 +858,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             </button>
           )}
 
-          {isAdmin && (
+          {canUpload && (
             <button
               type="button"
               onClick={() => setIsImageUploadOpen(true)}
@@ -863,7 +870,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             </button>
           )}
 
-          {isAdmin && onNewExportInFolder && (
+          {(canCreate || canUpload) && onNewExportInFolder && (
             <button
               type="button"
               onClick={() => {
@@ -1195,7 +1202,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
-                      onAttachImage={(item) => onEdit?.(item)}
+                      onAttachImage={canUpload ? (item) => onEdit?.(item) : undefined}
                       isHighlighted={file.id === highlightItemId}
                     />
                   ))}
@@ -1274,7 +1281,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
-                      onAttachImage={(item) => onEdit?.(item)}
+                      onAttachImage={canUpload ? (item) => onEdit?.(item) : undefined}
                       isHighlighted={file.id === highlightItemId}
                     />
                   ))}
@@ -1362,7 +1369,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onViewImage={(item) => setViewingImage(item)}
-                      onAttachImage={(item) => onEdit?.(item)}
+                      onAttachImage={canUpload ? (item) => onEdit?.(item) : undefined}
                       isHighlighted={file.id === highlightItemId}
                     />
                   ))}
@@ -1398,7 +1405,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
 
           <div className="h-4 w-px bg-border/60 mx-1" />
 
-          {isAdmin && (
+          {canEdit && (
             <Button
               size="sm"
               onClick={() => setIsMoveModalOpen(true)}
@@ -1409,7 +1416,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             </Button>
           )}
 
-          {isAdmin && (
+          {canDelete && (
             <Button
               variant="outline"
               size="sm"
@@ -1533,7 +1540,7 @@ export const FolderExplorerView: React.FC<FolderExplorerViewProps> = ({
             <span>Mở thư mục này</span>
           </button>
 
-          {isAdmin && (
+          {canDelete && (
             <>
               <div className="my-1 border-t border-border/40" />
               <button

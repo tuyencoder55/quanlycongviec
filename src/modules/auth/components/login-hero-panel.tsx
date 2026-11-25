@@ -32,11 +32,9 @@ export const LoginHeroPanel: React.FC = () => {
     let height = 0;
     let animationFrameId = 0;
 
-    // Vị trí thực tế hiện tại của tâm kính lúp (dùng lerp để cực mượt)
+    // Vị trí hiện tại của tâm kính lúp (tự động chạy liên tục 60fps)
     let curX = 0;
     let curY = 0;
-    let pointerX: number | null = null;
-    let pointerY: number | null = null;
 
     const resize = () => {
       const rect = container.getBoundingClientRect();
@@ -48,30 +46,11 @@ export const LoginHeroPanel: React.FC = () => {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      if (curX === 0 && curY === 0) {
-        curX = width * 0.56;
-        curY = height * 0.72;
-      }
     };
 
     resize();
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      pointerX = e.clientX - rect.left;
-      pointerY = e.clientY - rect.top;
-    };
-
-    const handleMouseLeave = () => {
-      pointerX = null;
-      pointerY = null;
-    };
-
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseleave', handleMouseLeave);
 
     const startTime = performance.now();
     const DOT_GAP = 24;
@@ -80,18 +59,11 @@ export const LoginHeroPanel: React.FC = () => {
     const render = (now: number) => {
       const t = (now - startTime) * 0.001;
 
-      // Quỹ đạo Lissajous tự nhiên, uốn lượn mượt mà khắp khung trái
-      const autoX =
-        width * (0.52 + 0.31 * Math.sin(t * 0.42) + 0.08 * Math.cos(t * 0.87));
-      const autoY =
-        height * (0.56 + 0.27 * Math.sin(t * 0.33 + 1.2) + 0.07 * Math.cos(t * 0.71));
-
-      const targetX = pointerX !== null ? pointerX : autoX;
-      const targetY = pointerY !== null ? pointerY : autoY;
-
-      // Nội suy mượt (lerp) giúp chuyển động êm ái không bị giật
-      curX += (targetX - curX) * 0.055;
-      curY += (targetY - curY) * 0.055;
+      // Quỹ đạo Lissajous tự động uốn lượn mềm mại khắp khung bên trái
+      curX =
+        width * (0.5 + 0.34 * Math.sin(t * 0.55) + 0.08 * Math.cos(t * 1.15));
+      curY =
+        height * (0.54 + 0.3 * Math.sin(t * 0.43 + 1.1) + 0.07 * Math.cos(t * 0.89));
 
       // Cập nhật vị trí kính lúp tìm kiếm trực tiếp qua GPU transform
       lens.style.transform = `translate3d(${curX - 24}px, ${curY - 24}px, 0)`;
@@ -156,8 +128,6 @@ export const LoginHeroPanel: React.FC = () => {
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [theme]);
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, User, Lock, Eye, EyeOff, Sun, Moon, AlertCircle } from 'lucide-react';
 import { useTheme } from '../../components/theme-provider';
 import { useAuth } from '../../hooks/use-auth';
+import { LoginHeroPanel } from './components/login-hero-panel';
 
 export const LoginScreen: React.FC = () => {
   const { signIn } = useAuth();
@@ -31,30 +32,8 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-bg text-text">
-      {/* Cột trái: Thương hiệu & Khẩu hiệu (Khớp hình Đăng nhập - Dark & Light) */}
-      <div className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-track/60 dark:bg-surface border-r border-[var(--border)] select-none">
-        {/* Logo trên cùng */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[10px] bg-ai-bg border border-ai-border flex items-center justify-center text-ai-text">
-            <Box className="w-[18px] h-[18px]" strokeWidth={1.8} />
-          </div>
-          <span className="text-[15px] font-semibold text-text tracking-[-0.01em]">
-            Nexus Prod
-          </span>
-        </div>
-
-        {/* Khẩu hiệu chính giữa */}
-        <div className="max-w-md">
-          <h1 className="text-[36px] xl:text-[40px] font-bold text-text leading-[1.2] tracking-[-0.025em]">
-            Tra cứu xuất khuôn, bảng và PO trong một nơi.
-          </h1>
-        </div>
-
-        {/* Ghi chú chân trang */}
-        <div className="text-[12px] text-subtle">
-          Hệ thống nội bộ. Tài khoản do Admin cấp.
-        </div>
-      </div>
+      {/* Cột trái: Nền lưới chấm bi + Icon tìm kiếm di chuyển mượt mà */}
+      <LoginHeroPanel />
 
       {/* Cột phải: Form đăng nhập + Nút đổi Sáng/Tối */}
       <div className="relative flex flex-col justify-center items-center p-6 sm:p-10 bg-bg">
